@@ -12,17 +12,17 @@
     "axios": "^0.19.2",
     "bignumber.js": "^9.0.0",
     "circom": "0.0.35",
-    "circomlib": "git+https://git@development.tornadocash.community/tornadocash/circomlib#master",
+    "circomlib": "git+https://git@development.tornadocash.community/tornadocash/circomlib#f6294680eb315878cb436a64c6deb66ac922f8c7",
     "commander": "^5.1.0",
     "dotenv": "^8.2.0",
-    "fixed-merkle-tree": "git+https://git@development.tornadocash.community/tornadocash/fixed-merkle-tree#master",
-    "gas-price-oracle": "^0.4.4",
+    "fixed-merkle-tree": "git+https://git@development.tornadocash.community/tornadocash/fixed-merkle-tree#d709343f1aea53bece79644392b044d8502f2882",
+    "gas-price-oracle": "^0.5.2",
     "private-ip": "^2.3.3",
-    "snarkjs": "git+https://git@development.tornadocash.community/tornadocash/snarkjs#master",
+    "snarkjs": "git+https://git@development.tornadocash.community/tornadocash/snarkjs#733c435f66735beeffaf871481e14ff217d00e4c",
     "socks-proxy-agent": "^6.1.1",
     "web3": "^1.6.1",
     "web3-providers-http": "file:local_modules/web3-providers-http",
-    "websnark": "git+https://git@development.tornadocash.community/tornadocash/websnark#master"
+    "websnark": "git+https://git@development.tornadocash.community/tornadocash/websnark#671762fab73f01771d0e7ebcf6b6a3123e193fb4"
   },
   "devDependencies": {
     "eslint": "^7.0.0"
