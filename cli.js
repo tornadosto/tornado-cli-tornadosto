@@ -19,7 +19,7 @@ const BigNumber = require('bignumber.js');
 const config = require('./config');
 const program = require('commander');
 const { GasPriceOracle } = require('gas-price-oracle');
-const SocksProxyAgent = require('socks-proxy-agent');
+const { SocksProxyAgent } = require('socks-proxy-agent');
 const is_ip_private = require('private-ip');
 
 let web3, torPort, tornado, tornadoContract, tornadoInstance, circuit, proving_key, groth16, erc20, senderAccount, netId, netName, netSymbol, doNotSubmitTx, multiCall, privateRpc, subgraph;
@@ -705,17 +705,18 @@ async function fetchGasPrice() {
       chainId: netId
     }
     // Bump fees for Ethereum network
-    if (netId == 1) {
+    try {
       const oracle = new GasPriceOracle(options);
       const gas = await oracle.gasPrices();
-      return gasPricesETH(gas.instant);
-    } else if (netId == 5 || isTestRPC) {
+      
+       if (netId === 1) {
+        return gasPricesETH(gas.instant);
+      } else {
+        return gasPrices(gas.instant)
+      }
+    } catch(e) {
       const web3GasPrice = await web3.eth.getGasPrice();
       return web3GasPrice;
-    } else {
-      const oracle = new GasPriceOracle(options);
-      const gas = await oracle.gasPrices();
-      return gasPrices(gas.instant);
     }
   } catch (err) {
     throw new Error(`Method fetchGasPrice has error ${err.message}`);
@@ -894,6 +895,7 @@ async function fetchEvents({ type, currency, amount }) {
         await updateCache();
       }
     } catch (error) {
+      console.log(error)
       throw new Error("Error while updating cache");
       process.exit(1);
     }
