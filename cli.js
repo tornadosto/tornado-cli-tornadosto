@@ -706,17 +706,18 @@ async function fetchGasPrice() {
     }
     // Bump fees for Ethereum network
     try {
+      const isLegacy = true
       const oracle = new GasPriceOracle(options);
-      const gas = await oracle.gasPrices();
-      
+      const gas = await oracle.gasPrices({ isLegacy });
+
        if (netId === 1) {
         return gasPricesETH(gas.instant);
       } else {
         return gasPrices(gas.instant)
       }
     } catch(e) {
-      const web3GasPrice = await web3.eth.getGasPrice();
-      return web3GasPrice;
+      const wei = await web3.eth.getGasPrice();
+      return wei / web3.utils.unitMap.gwei;
     }
   } catch (err) {
     throw new Error(`Method fetchGasPrice has error ${err.message}`);
