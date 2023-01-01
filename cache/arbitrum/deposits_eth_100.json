@@ -243,5 +243,26 @@
     "commitment": "0x10825e34c803bb9b03ecbc2786f79cf762d294a63b4416f135c491b5b1d28481",
     "leafIndex": 34,
     "timestamp": "1642060314"
+  },
+  {
+    "blockNumber": 6559837,
+    "transactionHash": "0x0c6691ebeddf54b0602003e5a8346078e8a6a7b2b65cfd4b376718438443a366",
+    "commitment": "0x1c56f9da68527192043631e24058b422f7cb90cbfeea04c8fef6d6507d220b78",
+    "leafIndex": 35,
+    "timestamp": "1645470797"
+  },
+  {
+    "blockNumber": 7613141,
+    "transactionHash": "0x873f78f0b57b604e77c1cc852c9305538aec6b18efae16d0dd0f78f30b66b088",
+    "commitment": "0x2a7b4f4e5968b7923323efe7ca1900e021ff7ab59066a3cb0dd31c227a07bb6b",
+    "leafIndex": 36,
+    "timestamp": "1646798161"
+  },
+  {
+    "blockNumber": 14222387,
+    "transactionHash": "0x92dde5e33d52cc7c6d946a53723a6f9d647222c6ae35c7392e7d1d8ddbc61cfb",
+    "commitment": "0x215483a314d5c08c9b1a856ee8521f7f1f85889ef4d838d2d086cb2ccde4d551",
+    "leafIndex": 37,
+    "timestamp": "1654858041"
   }
 ]

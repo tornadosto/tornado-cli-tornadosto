@@ -12,5 +12,12 @@
     "commitment": "0x20b19b2f530b34bf5625b7b4b19f1437b11fe0c4afe1e838db126bca978b8aa3",
     "leafIndex": 1,
     "timestamp": "1630001635"
+  },
+  {
+    "blockNumber": 22117256,
+    "transactionHash": "0xfce2bd5aa3cc6f2104550b5b6997283ebdb62e81791548e4c55c0838075c6b9b",
+    "commitment": "0x101de3f330d13d8d333e6f2f93f953816f035ddc64006940d501d385e93093cf",
+    "leafIndex": 2,
+    "timestamp": "1652412775"
   }
 ]
