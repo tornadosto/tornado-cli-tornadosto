@@ -1489,6 +1489,21 @@ async function main() {
         console.log("Synced event for", type, amount, currency.toUpperCase(), netName, "Tornado instance to block", cachedEvents[cachedEvents.length - 1].blockNumber);
       });
     program
+      .command('parseNote <note>')
+      .action(async(noteString) => {
+        const parse = parseNote(noteString);
+
+        netId = parse.netId;
+        netName = getCurrentNetworkName();
+
+        console.log('\n=============Note=================');
+        console.log('Network:',  netName);
+        console.log('Denomination:', parse.amount, parse.currency.toUpperCase());
+        console.log('Commitment: ', parse.deposit.commitmentHex);
+        console.log('Nullifier Hash: ', parse.deposit.nullifierHex);
+        console.log('=====================================', '\n');
+      })
+    program
       .command('test')
       .description('Perform an automated test. It deposits and withdraws one ETH and one ERC20 note. Uses ganache.')
       .action(async () => {
