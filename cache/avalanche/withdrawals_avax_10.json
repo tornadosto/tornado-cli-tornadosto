@@ -31106,5 +31106,47 @@
     "nullifierHash": "0x2505cb871765a473cb696dcd399538f4d4bb9cac3a69ac78c865960f92fee4e5",
     "to": "0xeB675eeAa57bF01815260a0Da0339843fd8f08D0",
     "fee": "0"
+  },
+  {
+    "blockNumber": 24818530,
+    "transactionHash": "0x75b680b308ca5267a4d8e48427b8e6258462364a9aa2f8fd792dfbde454e4679",
+    "nullifierHash": "0x30316ab04c18969955efd1d7318645bc43a8ea8b422524759e53f840998fb93b",
+    "to": "0x5fe65f78C1271DA32146E5D22F8798955E0c8eF0",
+    "fee": "25920000000000000"
+  },
+  {
+    "blockNumber": 25073347,
+    "transactionHash": "0x89da06d4647bcd9d8cdb4c3ebe63fba2efc3f20814df28dbe14a46a38c1ccd1f",
+    "nullifierHash": "0x284e88d2d0f41a8af87e4e52542eb8afa55763810754d507b976b1aa2a02f5e3",
+    "to": "0x2B56989cB8688910C69D72Ce634a5BA370Fb5b54",
+    "fee": "14420000000000000"
+  },
+  {
+    "blockNumber": 25661800,
+    "transactionHash": "0xde6aa9294b9823d7eba1eeadaa0b7c1275dbde5522f8a56931b898de78ecb1c0",
+    "nullifierHash": "0x0efd22c264bd01079452b0d1b1253882b40e2da9d1535b209f2d350796ee97e3",
+    "to": "0xF7D34e069B5C1f4C7d9a111cf7f03c5c11E3842A",
+    "fee": "14420000000000000"
+  },
+  {
+    "blockNumber": 25926592,
+    "transactionHash": "0xf0fec7ac33a9e4d849c88f4fb100d09b7d98e9907098bd2c7ef0318a6c5df510",
+    "nullifierHash": "0x0d32eda1d03b8d2f58dcc41c278a80d2716910b52be412a81250357950f08efc",
+    "to": "0xA6A61b7d9F1e1B1baf873Ff1f9b0B161c67D34B0",
+    "fee": "14420000000000000"
+  },
+  {
+    "blockNumber": 26316368,
+    "transactionHash": "0xeef7315c3ebdfdb7e55617720f5e38335bfba80902339f0bfba84bb2bf3ced5b",
+    "nullifierHash": "0x1a1f37e953d0385b72c38f3b415384a7d68031cc6bfd4bfb389afac77c52f2b6",
+    "to": "0xd45D863670C655F19704Bd380CBD3E8730d3f967",
+    "fee": "14420000000000000"
+  },
+  {
+    "blockNumber": 26316562,
+    "transactionHash": "0xf0f893729f65d5fd7caffb8cae443bbd5c23e15854c20237ef0fe77427fa7575",
+    "nullifierHash": "0x218026d94991cb50d20abc3d353f80274bf5e62af149d9461e2f6df9bd05c69c",
+    "to": "0x86eb0Ae06A4c832F7F71DBC9Dfcb9eF7Eda529bc",
+    "fee": "14420000000000000"
   }
 ]

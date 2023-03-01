@@ -152,5 +152,89 @@
     "commitment": "0x1b93db0f652d58498f92fad6621cbaa536847adc16c946934ae7b38f9d024f69",
     "leafIndex": 21,
     "timestamp": "1637749435"
+  },
+  {
+    "blockNumber": 6325352,
+    "transactionHash": "0xe7b8facf2d16d061a78294446dbc27ae3d5bf43d60390ef10cb179f2bbb2da2d",
+    "commitment": "0x26be6563b230d643a606a3edba329d11586e3ee825c037133088a8942dba34a9",
+    "leafIndex": 22,
+    "timestamp": "1644057240"
+  },
+  {
+    "blockNumber": 6899597,
+    "transactionHash": "0x3c580a0596a85c7a7b8ae01eecf7df39f9caee1e4ed0b1fef118c873e94f0f00",
+    "commitment": "0x235fd019cf830239eeeaed73bd48baac83eb2746744ddf307e2a4788c62a3c0a",
+    "leafIndex": 23,
+    "timestamp": "1652779237"
+  },
+  {
+    "blockNumber": 7078772,
+    "transactionHash": "0x6ad6e0a43eae25f7605490fe000857dfabb42e36fc5f2908f7e7ebd0a0abb290",
+    "commitment": "0x187b1cb2156331cf034acaae2150c8b18af16401a50f033d98c1c7089ce6129f",
+    "leafIndex": 24,
+    "timestamp": "1655528295"
+  },
+  {
+    "blockNumber": 7078815,
+    "transactionHash": "0x3051d264bed07f06553279291d3f6efe6de255816131beb2a10c90bb07093b1a",
+    "commitment": "0x27181c3511652453a231005fda420a0c85d57fc3d2bd5791e9a920865cca29cf",
+    "leafIndex": 25,
+    "timestamp": "1655528941"
+  },
+  {
+    "blockNumber": 7106363,
+    "transactionHash": "0xcf4e5e57bc6964c168c29872b6f81d3eb015e889239da3b1c67c4b37498d2d98",
+    "commitment": "0x2953d6e407439d725572611845bcafec2458d8ed5d05428518399d621a85400d",
+    "leafIndex": 26,
+    "timestamp": "1655952749"
+  },
+  {
+    "blockNumber": 7222615,
+    "transactionHash": "0x6e5d1bfed550e5e031904d2ba35b9ce40f00c6ee17e3d750ffa564bd1772c3ac",
+    "commitment": "0x02666a59b8602bb308146fbd6c93b1d74ccf73ced8a3b9a712ae3a8d22b2bc0f",
+    "leafIndex": 27,
+    "timestamp": "1657762221"
+  },
+  {
+    "blockNumber": 7271189,
+    "transactionHash": "0x07c5603f8968219e68ee1a62ca59516c8f870958cea8513a3c2dfdc665fe2317",
+    "commitment": "0x2e0ef64cfea18e63d5d4bc8558def39dc3944a1be0cbbdf32b60da341b4b5657",
+    "leafIndex": 28,
+    "timestamp": "1658496639"
+  },
+  {
+    "blockNumber": 8050359,
+    "transactionHash": "0xd41084cc0ad07ff757cfde61d38e44ec5ff8c1ef3b37da34a827487c163b6d1e",
+    "commitment": "0x2cc19b2dde579f1f0649c098b984c47d9e70bef07f863b996c81a734f1b71286",
+    "leafIndex": 29,
+    "timestamp": "1669842408"
+  },
+  {
+    "blockNumber": 8050361,
+    "transactionHash": "0xfd4fb21005bc38d6b79051f75f9e4917086f1689e0ff8ee3a8086d8588539c0b",
+    "commitment": "0x15e0e4d7a67cd9752ca22f4e0f9c685f4d364dcf46499750f1c56c4ebe107fe8",
+    "leafIndex": 30,
+    "timestamp": "1669842432"
+  },
+  {
+    "blockNumber": 8050362,
+    "transactionHash": "0x26bc87682d281b42db9f58ffd1a946cca0f8335f0cc492607ed6b81fde704c04",
+    "commitment": "0x2262309da5ed742340db058f748169798513266dfa01b43f68ab0161471e77ab",
+    "leafIndex": 31,
+    "timestamp": "1669842444"
+  },
+  {
+    "blockNumber": 8441316,
+    "transactionHash": "0xb1027171eb3f90b7a84fa7d9e5c8f5e67abe76e1a51a8da0028f6401019f833a",
+    "commitment": "0x25cccadc1cee07818f4b2414a59c942012af2fcdcf188f276e25aa8e6ee376a6",
+    "leafIndex": 32,
+    "timestamp": "1675640388"
+  },
+  {
+    "blockNumber": 8441319,
+    "transactionHash": "0x989caf8585f370af065c75a4d41138ff2bff0f8c6fbc9be7585317cb68491809",
+    "commitment": "0x0121d6fb1f0a18fd803028ab23bec640076d1cbf376ad4b3bbfd43ea449b9ac1",
+    "leafIndex": 33,
+    "timestamp": "1675640436"
   }
 ]
