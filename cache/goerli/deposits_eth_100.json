@@ -11233,5 +11233,19 @@
     "commitment": "0x293e4ccb7d9c68d0b96332fa177a8a73b5703f275a11eaae7095e8eba20c5fa3",
     "leafIndex": 1604,
     "timestamp": "1677479484"
+  },
+  {
+    "blockNumber": 8631971,
+    "transactionHash": "0x0038ad8b3d208714fbb41a1bb5d984406882cbac6c86d99edf50ca08d905cf47",
+    "commitment": "0x196d31fea2fb8023dd42c4d9665503a81e1fea24c2e1c342ff7b4c974f5e4316",
+    "leafIndex": 1605,
+    "timestamp": "1678474680"
+  },
+  {
+    "blockNumber": 8642102,
+    "transactionHash": "0x21ec9661cb4217a8f53aa7033b9930fe4efdf51178f2c0574bbd5bc650e60752",
+    "commitment": "0x06da63865afc6a87f18221944a86bcab7409c27072fbb3469b0f613e3ba4ea04",
+    "leafIndex": 1606,
+    "timestamp": "1678624848"
   }
 ]

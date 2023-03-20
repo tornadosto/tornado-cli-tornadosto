@@ -600,5 +600,54 @@
     "commitment": "0x249231947a907e1d9693a81947d841d235318cf45bf763cd1afce4b0abe16402",
     "leafIndex": 85,
     "timestamp": "1655129583"
+  },
+  {
+    "blockNumber": 7416119,
+    "transactionHash": "0xaedc35f9237446766fc868c2fb9cedcb744fe019a50fe0f89c4785e5b102c237",
+    "commitment": "0x1b7b162b8eaf39a5768dde79b86bb0c1b1cbb0f6ffd24661da4401118e093b9b",
+    "leafIndex": 86,
+    "timestamp": "1660665252"
+  },
+  {
+    "blockNumber": 7573248,
+    "transactionHash": "0xc0cebea96f294b23b979086b18b1205f5e1db594b120cce89eb501feee7baaa7",
+    "commitment": "0x29d72f1cb49527fdcd1f7efb820524cf6fe58062c771791e005dc6c0163530e8",
+    "leafIndex": 87,
+    "timestamp": "1662917256"
+  },
+  {
+    "blockNumber": 7739985,
+    "transactionHash": "0xa14fb3709ba250de6e4cb0a7f4ccbc0801c62475e043e1707e90566405117177",
+    "commitment": "0x2b7bdfb74da30ed47110407d0189bca65f03dbfa4fcdf7af3f1e319eaf4c1651",
+    "leafIndex": 88,
+    "timestamp": "1665328740"
+  },
+  {
+    "blockNumber": 7816195,
+    "transactionHash": "0xd30e72ce140cda82819431946e2a404e56672fcb236cc80dc771235def846a9a",
+    "commitment": "0x08d82ec06cc05752e957a13b70d23f76541c03fa5a94f119418c8c4ba8f31c73",
+    "leafIndex": 89,
+    "timestamp": "1666471176"
+  },
+  {
+    "blockNumber": 7857236,
+    "transactionHash": "0xc9384218785ec36de5530ea2c29273898b9b0d651258265d3f518fd3539f483b",
+    "commitment": "0x2833b9d31888a651c31302a6cb051b80ccc5024ad943a99abb5a06d89f2ee050",
+    "leafIndex": 90,
+    "timestamp": "1667078544"
+  },
+  {
+    "blockNumber": 8231887,
+    "transactionHash": "0xdc3dd259604cade29e88ac0f5ae537c682bf55456750815011febeb3af8eabfa",
+    "commitment": "0x079fdeea7381d1ad4032ee6659cc845cbe28b10c9fb4d18cccefc3a3b2c3cf2b",
+    "leafIndex": 91,
+    "timestamp": "1672478940"
+  },
+  {
+    "blockNumber": 8624982,
+    "transactionHash": "0x212ca71baba3265e4075f1e49be9505d1eddd74496d86139c67d8012da576da3",
+    "commitment": "0x030339751969f5a038f19845d56169dc0fd04a03dab87247aeaa371efc85b051",
+    "leafIndex": 92,
+    "timestamp": "1678371864"
   }
 ]

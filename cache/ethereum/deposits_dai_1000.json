@@ -7607,5 +7607,12 @@
     "commitment": "0x2bb67e7babcf45b4d80cdc49d13d98362dbf35846588247f43c4bfe72b8d0fd6",
     "leafIndex": 1086,
     "timestamp": "1673549579"
+  },
+  {
+    "blockNumber": 16851870,
+    "transactionHash": "0x90c4e09e9b0449a88ced35e9ca4fdc20eaad128321d22211d991d3b714d4f3dc",
+    "commitment": "0x2ca723eed8ff31a70b3a3124bf4bdba842281ce6600d8d96c65793f6d7442872",
+    "leafIndex": 1087,
+    "timestamp": "1679108831"
   }
 ]
