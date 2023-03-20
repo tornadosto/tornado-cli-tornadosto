@@ -292,5 +292,96 @@
     "nullifierHash": "0x1b797dc5fd18e1f70d8a2d45c6d58e88c5383aada7f98ec94bb8240abb6c9dee",
     "to": "0xE80B6467863EbF8865092544f441da8fD3cF6074",
     "fee": "3482787"
+  },
+  {
+    "blockNumber": 6437587,
+    "transactionHash": "0x232accbc82ead915cfb98fec8877d067a89b8b50e03393b62764901657bdb785",
+    "nullifierHash": "0x00afdc4f4faf6f6cb62bd7de91485504a6a6a6085017ed8403775b3792feb907",
+    "to": "0x9CBaEB487a5Dc7361419666243F424387065D634",
+    "fee": "7550613"
+  },
+  {
+    "blockNumber": 6500876,
+    "transactionHash": "0x2907fbb793877efad1d84f70404831498c666118d3a837d0c5e552b31eb77bda",
+    "nullifierHash": "0x1a3459533ed65492c4e0a5784fa7f36b11d1cede8d945143adb7b6d9c76a0884",
+    "to": "0x7A85782064c04cE1Eef4F556144D0e5EB51E9D79",
+    "fee": "2711935"
+  },
+  {
+    "blockNumber": 6523668,
+    "transactionHash": "0xc0b73b69212085b0a6e8b00cfaf3f4d9919ac6da384ccf9e5929514a8a186f03",
+    "nullifierHash": "0x0325475b7589501c25e5a81322e23deb18b4150784131c8c8218fb8d0e14727c",
+    "to": "0xc3B08B39E70CA51B3df78d5cF0A83879f78d3587",
+    "fee": "2894112"
+  },
+  {
+    "blockNumber": 6542679,
+    "transactionHash": "0x42eab6da43d51ccc547edf8c37456ce1e14697b38e56724bd4db8555f62e83a9",
+    "nullifierHash": "0x1fe02c6a4def69d69caf728894256076ca714942ebbb4ac509d5dabe7d22a16a",
+    "to": "0x67ba5dDe821Da70468361E790C46A4E3ED668B65",
+    "fee": "2907184"
+  },
+  {
+    "blockNumber": 6546274,
+    "transactionHash": "0x9fe6a1117da74bbf9e475b7abe9de1e40c0624dc0fd47cc15a37c927b2b8b4fc",
+    "nullifierHash": "0x0863a08ae83730845a68c344d7b48a6f4b06193b713de48f7844a7cf69d3177f",
+    "to": "0x7A85782064c04cE1Eef4F556144D0e5EB51E9D79",
+    "fee": "2995082"
+  },
+  {
+    "blockNumber": 6648177,
+    "transactionHash": "0x7b4899bdf1c289fc97d99f819dd5bec928dace418923cf195d672c1c7a294945",
+    "nullifierHash": "0x12cff6896b06d5ec50b8cee58aa6aff3a3b0b06450f3aa173b8707bde61162f1",
+    "to": "0x6CFFaCC81F39cFB0dc01d19C915c8358725aDCF9",
+    "fee": "0"
+  },
+  {
+    "blockNumber": 6764554,
+    "transactionHash": "0xc702808b3ced379554cbd0cafcbbbcfbe00952f445aa6948412cc739b2f05524",
+    "nullifierHash": "0x24517ec9e8c21cd0c7569b0bf9b97da67cb55d54c4bcb5af60c68665b4e6b94e",
+    "to": "0xf52c881d1aa95233d0905D474B45869640820554",
+    "fee": "8398148"
+  },
+  {
+    "blockNumber": 6951153,
+    "transactionHash": "0xee179e755aa11094fcee593dea184f7da7e01f79ed21505dc8071523b4b7a6c6",
+    "nullifierHash": "0x062a0435907f4efc83326ce84047465f7d3a4f60594dc73941795018d538a044",
+    "to": "0x5fbe3f0ea8A85C12b59E4aDDb8886d470e85e766",
+    "fee": "5276494"
+  },
+  {
+    "blockNumber": 6951169,
+    "transactionHash": "0x3cdd2cc5542e7d73745877138c6e703c11f9a0103dd16aeab9cf2614a1e4153d",
+    "nullifierHash": "0x1169ee07160d4fec19e6663db733f47ce1b44ce86be5b32144fc1a8880218ef5",
+    "to": "0x5fbe3f0ea8A85C12b59E4aDDb8886d470e85e766",
+    "fee": "5226606"
+  },
+  {
+    "blockNumber": 7052392,
+    "transactionHash": "0x355610b4eaa6081a897ebefacc30fa1b987962fd2fa41ce42062330e4e180545",
+    "nullifierHash": "0x1b40dfbaf4fea1ca16486638eb76506b4494abc013188878bb72694ffdac780d",
+    "to": "0x1232697E338a0eD0D8e0Aac337927486333f6d2A",
+    "fee": "3496364"
+  },
+  {
+    "blockNumber": 7380367,
+    "transactionHash": "0xced1a90220e0f071f3ddbe52b480d309efd0de5a7d2330731d51d733ecd4c187",
+    "nullifierHash": "0x008a3c29ea5a5c45e9fa1ca9bc3883036361584fb8a1658880f7abe3c42d34b7",
+    "to": "0x90b7a27efDEB7581b9C902AA518e68043b07Ea41",
+    "fee": "1262663"
+  },
+  {
+    "blockNumber": 7816222,
+    "transactionHash": "0x650297447629ae58023d0b39b26bac230e15a6fbcece473955e806712eac01ef",
+    "nullifierHash": "0x1183c4ac2f2ef1b00709d98974852642433d600b97144b49bb37f6330e76a0af",
+    "to": "0x9BA4C33F0Af6A50449FC2A0830C26b72e81B55d3",
+    "fee": "0"
+  },
+  {
+    "blockNumber": 7857255,
+    "transactionHash": "0xf5693b45388b7209e35b1189e1c78b1e5fa271a96a4d7a7711c8699390628941",
+    "nullifierHash": "0x0eac649d2f62269a12a749a43ebb9ca588024f61b03eb2f0354afe3a2fd66804",
+    "to": "0x9BA4C33F0Af6A50449FC2A0830C26b72e81B55d3",
+    "fee": "0"
   }
 ]
