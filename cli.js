@@ -1,5 +1,4 @@
 #!/usr/bin/env node
-// Works both in browser and node.js
 
 require('dotenv').config();
 const fs = require('fs');
@@ -25,8 +24,6 @@ const is_ip_private = require('private-ip');
 let web3, torPort, tornado, tornadoContract, tornadoInstance, circuit, proving_key, groth16, erc20, senderAccount, netId, netName, netSymbol, doNotSubmitTx, multiCall, privateRpc, subgraph;
 let MERKLE_TREE_HEIGHT, ETH_AMOUNT, TOKEN_AMOUNT, PRIVATE_KEY;
 
-/** Whether we are in a browser or node.js */
-const inBrowser = typeof window !== 'undefined';
 let isTestRPC = false;
 
 /** Generate random number of specified byte length */
@@ -1186,89 +1183,78 @@ async function loadWithdrawalData({ amount, currency, deposit }) {
  */
 async function init({ rpc, noteNetId, currency = 'dai', amount = '100', balanceCheck, localMode }) {
   let contractJson, instanceJson, erc20ContractJson, erc20tornadoJson, tornadoAddress, tokenAddress;
-  // TODO do we need this? should it work in browser really?
-  if (inBrowser) {
-    // Initialize using injected web3 (Metamask)
-    // To assemble web version run `npm run browserify`
-    web3 = new Web3(window.web3.currentProvider, null, {
-      transactionConfirmationBlocks: 1
-    });
-    contractJson = await (await fetch('build/contracts/TornadoProxy.abi.json')).json();
-    instanceJson = await (await fetch('build/contracts/Instance.abi.json')).json();
-    circuit = await (await fetch('build/circuits/tornado.json')).json();
-    proving_key = await (await fetch('build/circuits/tornadoProvingKey.bin')).arrayBuffer();
-    MERKLE_TREE_HEIGHT = 20;
-    ETH_AMOUNT = 1e18;
-    TOKEN_AMOUNT = 1e19;
-    senderAccount = (await web3.eth.getAccounts())[0];
+  let ipOptions = {};
+
+  if (torPort && rpc.includes("https")) {
+    console.log("Using tor network");
+    web3Options = { agent: { https: new SocksProxyAgent('socks5h://127.0.0.1:' + torPort) }, timeout: 60000 };
+    // Use forked web3-providers-http from local file to modify user-agent header value which improves privacy.
+    web3 = new Web3(new Web3HttpProvider(rpc, web3Options), null, { transactionConfirmationBlocks: 1 });
+    ipOptions = { httpsAgent: new SocksProxyAgent('socks5h://127.0.0.1:' + torPort), headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; rv:91.0) Gecko/20100101 Firefox/91.0' } };
+  } else if (torPort && rpc.includes("http")) {
+    console.log("Using tor network");
+    web3Options = { agent: { http: new SocksProxyAgent('socks5h://127.0.0.1:' + torPort) }, timeout: 60000 };
+    // Use forked web3-providers-http from local file to modify user-agent header value which improves privacy.
+    web3 = new Web3(new Web3HttpProvider(rpc, web3Options), null, { transactionConfirmationBlocks: 1 });
+    ipOptions = { httpsAgent: new SocksProxyAgent('socks5h://127.0.0.1:' + torPort), headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; rv:91.0) Gecko/20100101 Firefox/91.0' } };
+  } else if (rpc.includes("ipc")) {
+    console.log("Using ipc connection");
+    web3 = new Web3(new Web3.providers.IpcProvider(rpc, net), null, { transactionConfirmationBlocks: 1 });
+  } else if (rpc.includes("ws") || rpc.includes("wss")) {
+    console.log("Using websocket connection (Note: Tor is not supported for Websocket providers)");
+    web3Options = { clientConfig: { keepalive: true, keepaliveInterval: -1 }, reconnect: { auto: true, delay: 1000, maxAttempts: 10, onTimeout: false } };
+    web3 = new Web3(new Web3.providers.WebsocketProvider(rpc, web3Options), net, { transactionConfirmationBlocks: 1 });
   } else {
-    let ipOptions = {};
-    if (torPort && rpc.includes("https")) {
-      console.log("Using tor network");
-      web3Options = { agent: { https: new SocksProxyAgent('socks5h://127.0.0.1:' + torPort) }, timeout: 60000 };
-      // Use forked web3-providers-http from local file to modify user-agent header value which improves privacy.
-      web3 = new Web3(new Web3HttpProvider(rpc, web3Options), null, { transactionConfirmationBlocks: 1 });
-      ipOptions = { httpsAgent: new SocksProxyAgent('socks5h://127.0.0.1:' + torPort), headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; rv:91.0) Gecko/20100101 Firefox/91.0' } };
-    } else if (torPort && rpc.includes("http")) {
-      console.log("Using tor network");
-      web3Options = { agent: { http: new SocksProxyAgent('socks5h://127.0.0.1:' + torPort) }, timeout: 60000 };
-      // Use forked web3-providers-http from local file to modify user-agent header value which improves privacy.
-      web3 = new Web3(new Web3HttpProvider(rpc, web3Options), null, { transactionConfirmationBlocks: 1 });
-      ipOptions = { httpsAgent: new SocksProxyAgent('socks5h://127.0.0.1:' + torPort), headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; rv:91.0) Gecko/20100101 Firefox/91.0' } };
-    } else if (rpc.includes("ipc")) {
-      console.log("Using ipc connection");
-      web3 = new Web3(new Web3.providers.IpcProvider(rpc, net), null, { transactionConfirmationBlocks: 1 });
-    } else if (rpc.includes("ws") || rpc.includes("wss")) {
-      console.log("Using websocket connection (Note: Tor is not supported for Websocket providers)");
-      web3Options = { clientConfig: { keepalive: true, keepaliveInterval: -1 }, reconnect: { auto: true, delay: 1000, maxAttempts: 10, onTimeout: false } };
-      web3 = new Web3(new Web3.providers.WebsocketProvider(rpc, web3Options), net, { transactionConfirmationBlocks: 1 });
-    } else {
-      console.log("Connecting to remote node");
-      web3 = new Web3(rpc, null, { transactionConfirmationBlocks: 1 });
-    }
-    const rpcHost = new URL(rpc).hostname;
-    const isIpPrivate = is_ip_private(rpcHost);
-    if (!isIpPrivate && !rpc.includes("localhost") && !privateRpc) {
-      try {
-        const fetchRemoteIP = await axios.get('https://ip.tornado.cash', ipOptions);
-        const { country, ip } = fetchRemoteIP.data;
-        console.log('Your remote IP address is', ip, 'from', country + '.');
-      } catch (error) {
-        console.error('Could not fetch remote IP from ip.tornado.cash, use VPN if the problem repeats.');
-      }
-    } else if (isIpPrivate || rpc.includes("localhost")) {
-      console.log('Local RPC detected');
-      privateRpc = true;
-    }
-    contractJson = require('./build/contracts/TornadoProxy.abi.json');
-    instanceJson = require('./build/contracts/Instance.abi.json');
-    circuit = require('./build/circuits/tornado.json');
-    proving_key = fs.readFileSync('build/circuits/tornadoProvingKey.bin').buffer;
-    MERKLE_TREE_HEIGHT = process.env.MERKLE_TREE_HEIGHT || 20;
-    ETH_AMOUNT = process.env.ETH_AMOUNT;
-    TOKEN_AMOUNT = process.env.TOKEN_AMOUNT;
-    const privKey = process.env.PRIVATE_KEY;
-    if (privKey) {
-      if (privKey.includes("0x")) {
-        PRIVATE_KEY = process.env.PRIVATE_KEY.substring(2);
-      } else {
-        PRIVATE_KEY = process.env.PRIVATE_KEY;
-      }
-    }
-    if (PRIVATE_KEY) {
-      const account = web3.eth.accounts.privateKeyToAccount('0x' + PRIVATE_KEY);
-      web3.eth.accounts.wallet.add('0x' + PRIVATE_KEY);
-      web3.eth.defaultAccount = account.address;
-      senderAccount = account.address;
-    }
-    erc20ContractJson = require('./build/contracts/ERC20Mock.json');
-    erc20tornadoJson = require('./build/contracts/ERC20Tornado.json');
+    console.log("Connecting to remote node");
+    web3 = new Web3(rpc, null, { transactionConfirmationBlocks: 1 });
   }
+  
+  const rpcHost = new URL(rpc).hostname;
+  const isIpPrivate = is_ip_private(rpcHost);
+  
+  if (!isIpPrivate && !rpc.includes("localhost") && !privateRpc) {
+    try {
+      const fetchRemoteIP = await axios.get('https://ip.tornado.cash', ipOptions);
+      const { country, ip } = fetchRemoteIP.data;
+      console.log('Your remote IP address is', ip, 'from', country + '.');
+    } catch (error) {
+      console.error('Could not fetch remote IP from ip.tornado.cash, use VPN if the problem repeats.');
+    }
+  } else if (isIpPrivate || rpc.includes("localhost")) {
+    console.log('Local RPC detected');
+    privateRpc = true;
+  }
+  
+  contractJson = require('./build/contracts/TornadoProxy.abi.json');
+  instanceJson = require('./build/contracts/Instance.abi.json');
+  circuit = require('./build/circuits/tornado.json');
+  proving_key = fs.readFileSync('build/circuits/tornadoProvingKey.bin').buffer;
+  MERKLE_TREE_HEIGHT = process.env.MERKLE_TREE_HEIGHT || 20;
+  ETH_AMOUNT = process.env.ETH_AMOUNT;
+  TOKEN_AMOUNT = process.env.TOKEN_AMOUNT;
+  const privKey = process.env.PRIVATE_KEY;
+  
+  if (privKey) {
+    if (privKey.includes("0x")) {
+      PRIVATE_KEY = process.env.PRIVATE_KEY.substring(2);
+    } else {
+      PRIVATE_KEY = process.env.PRIVATE_KEY;
+    }
+  } if (PRIVATE_KEY) {
+    const account = web3.eth.accounts.privateKeyToAccount('0x' + PRIVATE_KEY);
+    web3.eth.accounts.wallet.add('0x' + PRIVATE_KEY);
+    web3.eth.defaultAccount = account.address;
+    senderAccount = account.address;
+  }
+  
+  erc20ContractJson = require('./build/contracts/ERC20Mock.json');
+  erc20tornadoJson = require('./build/contracts/ERC20Tornado.json');
   // groth16 initialises a lot of Promises that will never be resolved, that's why we need to use process.exit to terminate the CLI
   groth16 = await buildGroth16();
   netId = await web3.eth.net.getId();
   netName = getCurrentNetworkName();
   netSymbol = getCurrentNetworkSymbol();
+
   if (noteNetId && Number(noteNetId) !== netId) {
     throw new Error('This note is for a different network. Specify the --rpc option explicitly');
   }
@@ -1314,237 +1300,220 @@ async function init({ rpc, noteNetId, currency = 'dai', amount = '100', balanceC
 }
 
 async function main() {
-  if (inBrowser) {
-    const instance = { currency: 'eth', amount: '0.1' };
-    await init(instance);
-    window.deposit = async () => {
-      await deposit(instance);
-    }
-    window.withdraw = async () => {
-      const noteString = prompt('Enter the note to withdraw');
-      const recipient = (await web3.eth.getAccounts())[0];
-
-      const { currency, amount, netId, deposit } = parseNote(noteString);
-      await init({ noteNetId: netId, currency, amount });
-      await withdraw({ deposit, currency, amount, recipient });
-    }
-  } else {
-    program
-      .option('-r, --rpc <URL>', 'The RPC that CLI should interact with', 'http://localhost:8545')
-      .option('-R, --relayer <URL>', 'Withdraw via relayer')
-      .option('-T, --tor <PORT>', 'Optional tor port')
-      .option('-L, --local', 'Local Node - Does not submit signed transaction to the node')
-      .option('-o, --onlyrpc', 'Only rpc mode - Does not enable thegraph api nor remote ip detection');
-    program
-      .command('createNote <currency> <amount> <chainId>')
-      .description(
-        'Create deposit note and invoice, allows generating private key like deposit notes from secure, offline environment. The currency is one of (ETH|DAI|cDAI|USDC|cUSDC|USDT). The amount depends on currency, see config.js file or visit https://tornado.cash.'
-      )
-      .action(async (currency, amount, chainId) => {
-        currency = currency.toLowerCase();
-        await createInvoice({ currency, amount, chainId });
-      });
-    program
-      .command('depositInvoice <invoice>')
-      .description(
-        'Submit a deposit of invoice from default eth account and return the resulting note.'
-      )
-      .action(async (invoice) => {
-        if (program.onlyrpc) {
-          privateRpc = true;
-        }
-        torPort = program.tor;
-        const { currency, amount, netId, commitmentNote } = parseInvoice(invoice);
-        await init({ rpc: program.rpc, currency, amount, localMode: program.local });
-        console.log("Creating", currency.toUpperCase(), amount, "deposit for", netName, "Tornado Cash Instance");
-        await deposit({ currency, amount, commitmentNote });
-      });
-    program
-      .command('deposit <currency> <amount>')
-      .description(
-        'Submit a deposit of specified currency and amount from default eth account and return the resulting note. The currency is one of (ETH|DAI|cDAI|USDC|cUSDC|USDT). The amount depends on currency, see config.js file or visit https://tornado.cash.'
-      )
-      .action(async (currency, amount) => {
-        if (program.onlyrpc) {
-          privateRpc = true;
-        }
-        currency = currency.toLowerCase();
-        torPort = program.tor;
-        await init({ rpc: program.rpc, currency, amount, localMode: program.local });
-        await deposit({ currency, amount });
-      });
-    program
-      .command('withdraw <note> <recipient> [ETH_purchase]')
-      .description(
-        'Withdraw a note to a recipient account using relayer or specified private key. You can exchange some of your deposit`s tokens to ETH during the withdrawal by specifing ETH_purchase (e.g. 0.01) to pay for gas in future transactions. Also see the --relayer option.'
-      )
-      .action(async (noteString, recipient, refund) => {
-        if (program.onlyrpc) {
-          privateRpc = true;
-        }
-        const { currency, amount, netId, deposit } = parseNote(noteString);
-        torPort = program.tor;
-        await init({ rpc: program.rpc, noteNetId: netId, currency, amount, localMode: program.local });
-        await withdraw({
-          deposit,
-          currency,
-          amount,
-          recipient,
-          refund,
-          relayerURL: program.relayer
-        });
-      });
-    program
-      .command('balance [address] [token_address]')
-      .description('Check ETH and ERC20 balance')
-      .action(async (address, tokenAddress) => {
-        if (program.onlyrpc) {
-          privateRpc = true;
-        }
-        torPort = program.tor;
-        await init({ rpc: program.rpc, balanceCheck: true });
-        if (!address && senderAccount) {
-          console.log("Using address", senderAccount, "from private key");
-          address = senderAccount;
-        }
-        await printETHBalance({ address, name: 'Account' });
-        if (tokenAddress) {
-          await printERC20Balance({ address, name: 'Account', tokenAddress });
-        }
-      });
-    program
-      .command('send <address> [amount] [token_address]')
-      .description('Send ETH or ERC to address')
-      .action(async (address, amount, tokenAddress) => {
-        if (program.onlyrpc) {
-          privateRpc = true;
-        }
-        torPort = program.tor;
-        await init({ rpc: program.rpc, balanceCheck: true, localMode: program.local });
-        await send({ address, amount, tokenAddress });
-      });
-    program
-      .command('broadcast <signedTX>')
-      .description('Submit signed TX to the remote node')
-      .action(async (signedTX) => {
-        if (program.onlyrpc) {
-          privateRpc = true;
-        }
-        torPort = program.tor;
-        await init({ rpc: program.rpc, balanceCheck: true });
-        await submitTransaction(signedTX);
-      });
-    program
-      .command('compliance <note>')
-      .description(
-        'Shows the deposit and withdrawal of the provided note. This might be necessary to show the origin of assets held in your withdrawal address.'
-      )
-      .action(async (noteString) => {
-        if (program.onlyrpc) {
-          privateRpc = true;
-        }
-        const { currency, amount, netId, deposit } = parseNote(noteString);
-        torPort = program.tor;
-        await init({ rpc: program.rpc, noteNetId: netId, currency, amount });
-        const depositInfo = await loadDepositData({ amount, currency, deposit });
-        const depositDate = new Date(depositInfo.timestamp * 1000);
-        console.log('\n=============Deposit=================');
-        console.log('Deposit     :', amount, currency.toUpperCase());
-        console.log('Date        :', depositDate.toLocaleDateString(), depositDate.toLocaleTimeString());
-        console.log('From        :', `https://${getExplorerLink()}/address/${depositInfo.from}`);
-        console.log('Transaction :', `https://${getExplorerLink()}/tx/${depositInfo.txHash}`);
-        console.log('Commitment  :', depositInfo.commitment);
-        console.log('Spent       :', depositInfo.isSpent);
-        if (!depositInfo.isSpent) {
-          console.log('The note was not spent');
-          return;
-        }
-        console.log('=====================================', '\n');
-
-        const withdrawInfo = await loadWithdrawalData({ amount, currency, deposit });
-        const withdrawalDate = new Date(withdrawInfo.timestamp * 1000);
-        console.log('\n=============Withdrawal==============');
-        console.log('Withdrawal  :', withdrawInfo.amount, currency);
-        console.log('Relayer Fee :', withdrawInfo.fee, currency);
-        console.log('Date        :', withdrawalDate.toLocaleDateString(), withdrawalDate.toLocaleTimeString());
-        console.log('To          :', `https://${getExplorerLink()}/address/${withdrawInfo.to}`);
-        console.log('Transaction :', `https://${getExplorerLink()}/tx/${withdrawInfo.txHash}`);
-        console.log('Nullifier   :', withdrawInfo.nullifier);
-        console.log('=====================================', '\n');
-      });
-    program
-      .command('syncEvents <type> <currency> <amount>')
-      .description(
-        'Sync the local cache file of deposit / withdrawal events for specific currency.'
-      )
-      .action(async (type, currency, amount) => {
-        if (program.onlyrpc) {
-          privateRpc = true;
-        }
-        console.log("Starting event sync command");
-        currency = currency.toLowerCase();
-        torPort = program.tor;
-        await init({ rpc: program.rpc, type, currency, amount });
-        const cachedEvents = await fetchEvents({ type, currency, amount });
-        console.log("Synced event for", type, amount, currency.toUpperCase(), netName, "Tornado instance to block", cachedEvents[cachedEvents.length - 1].blockNumber);
-      });
-    program
-      .command('parseNote <note>')
-      .action(async(noteString) => {
-        const parse = parseNote(noteString);
-
-        netId = parse.netId;
-        netName = getCurrentNetworkName();
-
-        console.log('\n=============Note=================');
-        console.log('Network:',  netName);
-        console.log('Denomination:', parse.amount, parse.currency.toUpperCase());
-        console.log('Commitment: ', parse.deposit.commitmentHex);
-        console.log('Nullifier Hash: ', parse.deposit.nullifierHex);
-        console.log('=====================================', '\n');
-      })
-    program
-      .command('test')
-      .description('Perform an automated test. It deposits and withdraws one ETH and one ERC20 note. Uses ganache.')
-      .action(async () => {
+  program
+    .option('-r, --rpc <URL>', 'The RPC that CLI should interact with', 'http://localhost:8545')
+    .option('-R, --relayer <URL>', 'Withdraw via relayer')
+    .option('-T, --tor <PORT>', 'Optional tor port')
+    .option('-L, --local', 'Local Node - Does not submit signed transaction to the node')
+    .option('-o, --onlyrpc', 'Only rpc mode - Does not enable thegraph api nor remote ip detection');
+  program
+    .command('createNote <currency> <amount> <chainId>')
+    .description(
+      'Create deposit note and invoice, allows generating private key like deposit notes from secure, offline environment. The currency is one of (ETH|DAI|cDAI|USDC|cUSDC|USDT). The amount depends on currency, see config.js file or visit https://tornado.cash.'
+    )
+    .action(async (currency, amount, chainId) => {
+      currency = currency.toLowerCase();
+      await createInvoice({ currency, amount, chainId });
+    });
+  program
+    .command('depositInvoice <invoice>')
+    .description(
+      'Submit a deposit of invoice from default eth account and return the resulting note.'
+    )
+    .action(async (invoice) => {
+      if (program.onlyrpc) {
         privateRpc = true;
-        console.log('Start performing ETH deposit-withdraw test');
-        let currency = 'eth';
-        let amount = '0.1';
-        await init({ rpc: program.rpc, currency, amount });
-        let noteString = await deposit({ currency, amount });
-        let parsedNote = parseNote(noteString);
-        await withdraw({
-          deposit: parsedNote.deposit,
-          currency,
-          amount,
-          recipient: senderAccount,
-          relayerURL: program.relayer
-        });
-
-        console.log('\nStart performing DAI deposit-withdraw test');
-        currency = 'dai';
-        amount = '100';
-        await init({ rpc: program.rpc, currency, amount });
-        noteString = await deposit({ currency, amount });
-        parsedNote = parseNote(noteString);
-        await withdraw({
-          deposit: parsedNote.deposit,
-          currency,
-          amount,
-          recipient: senderAccount,
-          refund: '0.02',
-          relayerURL: program.relayer
-        });
+      }
+      torPort = program.tor;
+      const { currency, amount, netId, commitmentNote } = parseInvoice(invoice);
+      await init({ rpc: program.rpc, currency, amount, localMode: program.local });
+      console.log("Creating", currency.toUpperCase(), amount, "deposit for", netName, "Tornado Cash Instance");
+      await deposit({ currency, amount, commitmentNote });
+    });
+  program
+    .command('deposit <currency> <amount>')
+    .description(
+      'Submit a deposit of specified currency and amount from default eth account and return the resulting note. The currency is one of (ETH|DAI|cDAI|USDC|cUSDC|USDT). The amount depends on currency, see config.js file or visit https://tornado.cash.'
+    )
+    .action(async (currency, amount) => {
+      if (program.onlyrpc) {
+        privateRpc = true;
+      }
+      currency = currency.toLowerCase();
+      torPort = program.tor;
+      await init({ rpc: program.rpc, currency, amount, localMode: program.local });
+      await deposit({ currency, amount });
+    });
+  program
+    .command('withdraw <note> <recipient> [ETH_purchase]')
+    .description(
+      'Withdraw a note to a recipient account using relayer or specified private key. You can exchange some of your deposit`s tokens to ETH during the withdrawal by specifing ETH_purchase (e.g. 0.01) to pay for gas in future transactions. Also see the --relayer option.'
+    )
+    .action(async (noteString, recipient, refund) => {
+      if (program.onlyrpc) {
+        privateRpc = true;
+      }
+      const { currency, amount, netId, deposit } = parseNote(noteString);
+      torPort = program.tor;
+      await init({ rpc: program.rpc, noteNetId: netId, currency, amount, localMode: program.local });
+      await withdraw({
+        deposit,
+        currency,
+        amount,
+        recipient,
+        refund,
+        relayerURL: program.relayer
       });
-    try {
+    });
+  program
+    .command('balance [address] [token_address]')
+    .description('Check ETH and ERC20 balance')
+    .action(async (address, tokenAddress) => {
+      if (program.onlyrpc) {
+        privateRpc = true;
+      }
+      torPort = program.tor;
+      await init({ rpc: program.rpc, balanceCheck: true });
+      if (!address && senderAccount) {
+        console.log("Using address", senderAccount, "from private key");
+        address = senderAccount;
+      }
+      await printETHBalance({ address, name: 'Account' });
+      if (tokenAddress) {
+        await printERC20Balance({ address, name: 'Account', tokenAddress });
+      }
+    });
+  program
+    .command('send <address> [amount] [token_address]')
+    .description('Send ETH or ERC to address')
+    .action(async (address, amount, tokenAddress) => {
+      if (program.onlyrpc) {
+        privateRpc = true;
+      }
+      torPort = program.tor;
+      await init({ rpc: program.rpc, balanceCheck: true, localMode: program.local });
+      await send({ address, amount, tokenAddress });
+    });
+  program
+    .command('broadcast <signedTX>')
+    .description('Submit signed TX to the remote node')
+    .action(async (signedTX) => {
+      if (program.onlyrpc) {
+        privateRpc = true;
+      }
+      torPort = program.tor;
+      await init({ rpc: program.rpc, balanceCheck: true });
+      await submitTransaction(signedTX);
+    });
+  program
+    .command('compliance <note>')
+    .description(
+      'Shows the deposit and withdrawal of the provided note. This might be necessary to show the origin of assets held in your withdrawal address.'
+    )
+    .action(async (noteString) => {
+      if (program.onlyrpc) {
+        privateRpc = true;
+      }
+      const { currency, amount, netId, deposit } = parseNote(noteString);
+      torPort = program.tor;
+      await init({ rpc: program.rpc, noteNetId: netId, currency, amount });
+      const depositInfo = await loadDepositData({ amount, currency, deposit });
+      const depositDate = new Date(depositInfo.timestamp * 1000);
+      console.log('\n=============Deposit=================');
+      console.log('Deposit     :', amount, currency.toUpperCase());
+      console.log('Date        :', depositDate.toLocaleDateString(), depositDate.toLocaleTimeString());
+      console.log('From        :', `https://${getExplorerLink()}/address/${depositInfo.from}`);
+      console.log('Transaction :', `https://${getExplorerLink()}/tx/${depositInfo.txHash}`);
+      console.log('Commitment  :', depositInfo.commitment);
+      console.log('Spent       :', depositInfo.isSpent);
+      if (!depositInfo.isSpent) {
+        console.log('The note was not spent');
+        return;
+      }
+      console.log('=====================================', '\n');
+      const withdrawInfo = await loadWithdrawalData({ amount, currency, deposit });
+      const withdrawalDate = new Date(withdrawInfo.timestamp * 1000);
+      console.log('\n=============Withdrawal==============');
+      console.log('Withdrawal  :', withdrawInfo.amount, currency);
+      console.log('Relayer Fee :', withdrawInfo.fee, currency);
+      console.log('Date        :', withdrawalDate.toLocaleDateString(), withdrawalDate.toLocaleTimeString());
+      console.log('To          :', `https://${getExplorerLink()}/address/${withdrawInfo.to}`);
+      console.log('Transaction :', `https://${getExplorerLink()}/tx/${withdrawInfo.txHash}`);
+      console.log('Nullifier   :', withdrawInfo.nullifier);
+      console.log('=====================================', '\n');
+    });
+  program
+    .command('syncEvents <type> <currency> <amount>')
+    .description(
+      'Sync the local cache file of deposit / withdrawal events for specific currency.'
+    )
+    .action(async (type, currency, amount) => {
+      if (program.onlyrpc) {
+        privateRpc = true;
+      }
+      console.log("Starting event sync command");
+      currency = currency.toLowerCase();
+      torPort = program.tor;
+      await init({ rpc: program.rpc, type, currency, amount });
+      const cachedEvents = await fetchEvents({ type, currency, amount });
+      console.log("Synced event for", type, amount, currency.toUpperCase(), netName, "Tornado instance to block", cachedEvents[cachedEvents.length - 1].blockNumber);
+    });
+  program
+    .command('parseNote <note>')
+    .action(async(noteString) => {
+      const parse = parseNote(noteString);
+
+      netId = parse.netId;
+      netName = getCurrentNetworkName();
+
+      console.log('\n=============Note=================');
+      console.log('Network:',  netName);
+      console.log('Denomination:', parse.amount, parse.currency.toUpperCase());
+      console.log('Commitment: ', parse.deposit.commitmentHex);
+      console.log('Nullifier Hash: ', parse.deposit.nullifierHex);
+      console.log('=====================================', '\n');
+    })
+  program
+    .command('test')
+    .description('Perform an automated test. It deposits and withdraws one ETH and one ERC20 note. Uses ganache.')
+    .action(async () => {
+      privateRpc = true;
+      console.log('Start performing ETH deposit-withdraw test');
+      let currency = 'eth';
+      let amount = '0.1';
+      await init({ rpc: program.rpc, currency, amount });
+      let noteString = await deposit({ currency, amount });
+      let parsedNote = parseNote(noteString);
+      await withdraw({
+        deposit: parsedNote.deposit,
+        currency,
+        amount,
+        recipient: senderAccount,
+        relayerURL: program.relayer
+      });
+
+      console.log('\nStart performing DAI deposit-withdraw test');
+      currency = 'dai';
+      amount = '100';
+      await init({ rpc: program.rpc, currency, amount });
+      noteString = await deposit({ currency, amount });
+      parsedNote = parseNote(noteString);
+      await withdraw({
+        deposit: parsedNote.deposit,
+        currency,
+        amount,
+        recipient: senderAccount,
+        refund: '0.02',
+        relayerURL: program.relayer
+      });
+    });
+  try {
       await program.parseAsync(process.argv);
       process.exit(0);
     } catch (e) {
       console.log('Error:', e);
       process.exit(1);
     }
-  }
 }
 
 main();
