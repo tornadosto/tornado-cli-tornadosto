@@ -20,11 +20,20 @@ const program = require('commander');
 const { GasPriceOracle } = require('gas-price-oracle');
 const { SocksProxyAgent } = require('socks-proxy-agent');
 const is_ip_private = require('private-ip');
+const readline = require('readline');
 
-let web3, torPort, tornado, tornadoContract, tornadoInstance, circuit, proving_key, groth16, erc20, senderAccount, netId, netName, netSymbol, doNotSubmitTx, multiCall, privateRpc, subgraph;
+const prompt = readline.createInterface({ input: process.stdin, output: process.stdout });
+const gasSpeedPreferences = ['instant', 'fast', 'standard', 'low'];
+
+let web3, torPort, tornado, tornadoContract, tornadoInstance, circuit, proving_key, groth16, erc20, senderAccount, netId, netName, netSymbol, multiCall, subgraph;
 let MERKLE_TREE_HEIGHT, ETH_AMOUNT, TOKEN_AMOUNT, PRIVATE_KEY;
 
-let isTestRPC = false;
+/** Command state parameters */
+let preferenceSpeed = gasSpeedPreferences[0];
+let isTestRPC, eipGasSupport = false;
+let shouldPromptConfirmation = true;
+let doNotSubmitTx, privateRpc;
+/** ----------------------------------------- **/
 
 /** Generate random number of specified byte length */
 const rbigint = (nbytes) => snarkjs.bigInt.leBuff2int(crypto.randomBytes(nbytes));
@@ -104,11 +113,24 @@ async function generateTransaction(to, encodedData, value = 0) {
     const bumped = Math.floor(fetchedGas * 1.3);
     return web3.utils.toHex(bumped);
   }
+
   if (encodedData) {
     gasLimit = await estimateGas();
   } else {
-    gasLimit = web3.utils.toHex(21000);
+    gasLimit = web3.utils.toHex(23000);
   }
+
+  const isNumRString = typeof value == 'string' || typeof value == 'number' 
+  const valueCost = isNumRString ? toBN(value) : value;
+  const gasCosts = toBN(gasPrice).mul(toBN(gasLimit));
+  const totalCosts = valueCost.add(gasCosts);
+
+  /** Transaction details */
+  console.log('Gas price: ', web3.utils.hexToNumber(gasPrice));
+  console.log('Gas limit: ', web3.utils.hexToNumber(gasLimit));
+  console.log('Transaction fee: ', rmDecimalBN(fromWei(gasCosts), 12), `${netSymbol}`);
+  console.log('Transaction cost: ', rmDecimalBN(fromWei(totalCosts), 12), `${netSymbol}`);
+  /** ----------------------------------------- **/
 
   function txoptions() {
     // Generate EIP-1559 transaction
@@ -143,8 +165,14 @@ async function generateTransaction(to, encodedData, value = 0) {
       }
     }
   }
+
+  if (shouldPromptConfirmation) {
+    await promptConfirmation();
+  }
+
   const tx = txoptions();
   const signed = await web3.eth.accounts.signTransaction(tx, PRIVATE_KEY);
+
   if (!doNotSubmitTx) {
     await submitTransaction(signed.rawTransaction);
   } else {
@@ -404,6 +432,20 @@ async function withdraw({ deposit, currency, amount, recipient, relayerURL, refu
     const { proof, args } = await generateProof({ deposit, currency, amount, recipient, relayerAddress: rewardAccount, fee, refund });
 
     console.log('Sending withdraw transaction through relay');
+
+    const gasCosts = toBN(gasPrice).mul(toBN(340000));
+    const totalCosts = fee.add(gasCosts);
+
+    /** Relayer fee details **/
+    console.log('Transaction fee: ', rmDecimalBN(fromWei(gasCosts), 12), `${netSymbol}`);
+    console.log('Relayer fee: ', rmDecimalBN(fromWei(fee), 12), `${netSymbol}`);
+    console.log('Total fees: ', rmDecimalBN(fromWei(totalCosts), 12), `${netSymbol}`);
+    /** -------------------- **/
+
+    if (shouldPromptConfirmation) {
+      await promptConfirmation();
+    }
+
     try {
       const response = await axios.post(relayerURL + '/v1/tornadoWithdraw', {
         contract: tornadoInstance,
@@ -698,19 +740,20 @@ function gasPrices(value = 5) {
 
 async function fetchGasPrice() {
   try {
-    const options = {
-      chainId: netId
-    }
-    // Bump fees for Ethereum network
+    /** Gas preferences **/
+    console.log('Gas speed preference: ', preferenceSpeed);
+    /** ----------------------------------------------- **/
+    const options = { chainId: netId }
+
     try {
-      const isLegacy = true
+      const isLegacy = !eipGasSupport
       const oracle = new GasPriceOracle(options);
       const gas = await oracle.gasPrices({ isLegacy });
 
        if (netId === 1) {
-        return gasPricesETH(gas.instant);
+        return gasPricesETH(gas[preferenceSpeed]);
       } else {
-        return gasPrices(gas.instant)
+        return gasPrices(gas[preferenceSpeed])
       }
     } catch(e) {
       const wei = await web3.eth.getGasPrice();
@@ -1178,6 +1221,33 @@ async function loadWithdrawalData({ amount, currency, deposit }) {
   }
 }
 
+function statePreferences(program) {
+  const isPref = gasSpeedPreferences.includes(program.gas_speed);
+
+  if (program.gas_speed && !isPref) {
+    throw new Error("Invalid gas speed preference");
+  } else if (program.gas_speed) {
+    preferenceSpeed = program.gas_speed;
+  } 
+
+  if(program.noconfirmation) {
+    shouldPromptConfirmation = false;
+  } if(program.onlyrpc) { 
+    privateRpc = true;
+  } if(program.tor) {
+    torPort = program.tor;
+  } 
+}
+
+async function promptConfirmation() {
+  const query = "Confirm the transaction [Y/n] ";
+  const confirmation = await new Promise(resolve => prompt.question(query, resolve));
+
+  if (confirmation.toUpperCase() !== "Y") {
+    throw new Error("Transaction rejected"); 
+  }
+}
+
 /**
  * Init web3, contracts, and snark
  */
@@ -1304,15 +1374,17 @@ async function main() {
     .option('-r, --rpc <URL>', 'The RPC that CLI should interact with', 'http://localhost:8545')
     .option('-R, --relayer <URL>', 'Withdraw via relayer')
     .option('-T, --tor <PORT>', 'Optional tor port')
-    .option('-L, --local', 'Local Node - Does not submit signed transaction to the node')
-    .option('-o, --onlyrpc', 'Only rpc mode - Does not enable thegraph api nor remote ip detection');
+    .option('-S --gas_speed <SPEED>', 'Gas speed preference [ instant, fast, standard, low ]')  
+    .option('-N --noconfirmation', 'No confirmation mode - Does not query confirmation ')               
+    .option('-L, --local-rpc', 'Local node mode - Does not submit signed transaction to the node')
+    .option('-o, --only-rpc', 'Only rpc mode - Does not enable thegraph api nor remote ip detection');
   program
     .command('createNote <currency> <amount> <chainId>')
     .description(
       'Create deposit note and invoice, allows generating private key like deposit notes from secure, offline environment. The currency is one of (ETH|DAI|cDAI|USDC|cUSDC|USDT). The amount depends on currency, see config.js file or visit https://tornado.cash.'
     )
     .action(async (currency, amount, chainId) => {
-      currency = currency.toLowerCase();
+      currency = currency.toLowerCase(); 
       await createInvoice({ currency, amount, chainId });
     });
   program
@@ -1321,10 +1393,8 @@ async function main() {
       'Submit a deposit of invoice from default eth account and return the resulting note.'
     )
     .action(async (invoice) => {
-      if (program.onlyrpc) {
-        privateRpc = true;
-      }
-      torPort = program.tor;
+      statePreferences(program)
+
       const { currency, amount, netId, commitmentNote } = parseInvoice(invoice);
       await init({ rpc: program.rpc, currency, amount, localMode: program.local });
       console.log("Creating", currency.toUpperCase(), amount, "deposit for", netName, "Tornado Cash Instance");
@@ -1336,11 +1406,10 @@ async function main() {
       'Submit a deposit of specified currency and amount from default eth account and return the resulting note. The currency is one of (ETH|DAI|cDAI|USDC|cUSDC|USDT). The amount depends on currency, see config.js file or visit https://tornado.cash.'
     )
     .action(async (currency, amount) => {
-      if (program.onlyrpc) {
-        privateRpc = true;
-      }
       currency = currency.toLowerCase();
-      torPort = program.tor;
+
+      statePreferences(program)
+
       await init({ rpc: program.rpc, currency, amount, localMode: program.local });
       await deposit({ currency, amount });
     });
@@ -1350,11 +1419,10 @@ async function main() {
       'Withdraw a note to a recipient account using relayer or specified private key. You can exchange some of your deposit`s tokens to ETH during the withdrawal by specifing ETH_purchase (e.g. 0.01) to pay for gas in future transactions. Also see the --relayer option.'
     )
     .action(async (noteString, recipient, refund) => {
-      if (program.onlyrpc) {
-        privateRpc = true;
-      }
+      statePreferences(program)
+
       const { currency, amount, netId, deposit } = parseNote(noteString);
-      torPort = program.tor;
+
       await init({ rpc: program.rpc, noteNetId: netId, currency, amount, localMode: program.local });
       await withdraw({
         deposit,
@@ -1369,10 +1437,8 @@ async function main() {
     .command('balance [address] [token_address]')
     .description('Check ETH and ERC20 balance')
     .action(async (address, tokenAddress) => {
-      if (program.onlyrpc) {
-        privateRpc = true;
-      }
-      torPort = program.tor;
+      statePreferences(program)
+
       await init({ rpc: program.rpc, balanceCheck: true });
       if (!address && senderAccount) {
         console.log("Using address", senderAccount, "from private key");
@@ -1387,10 +1453,8 @@ async function main() {
     .command('send <address> [amount] [token_address]')
     .description('Send ETH or ERC to address')
     .action(async (address, amount, tokenAddress) => {
-      if (program.onlyrpc) {
-        privateRpc = true;
-      }
-      torPort = program.tor;
+      statePreferences(program)
+
       await init({ rpc: program.rpc, balanceCheck: true, localMode: program.local });
       await send({ address, amount, tokenAddress });
     });
@@ -1398,10 +1462,8 @@ async function main() {
     .command('broadcast <signedTX>')
     .description('Submit signed TX to the remote node')
     .action(async (signedTX) => {
-      if (program.onlyrpc) {
-        privateRpc = true;
-      }
-      torPort = program.tor;
+      statePreferences(program)
+
       await init({ rpc: program.rpc, balanceCheck: true });
       await submitTransaction(signedTX);
     });
@@ -1411,11 +1473,10 @@ async function main() {
       'Shows the deposit and withdrawal of the provided note. This might be necessary to show the origin of assets held in your withdrawal address.'
     )
     .action(async (noteString) => {
-      if (program.onlyrpc) {
-        privateRpc = true;
-      }
+      statePreferences(program)
+ 
       const { currency, amount, netId, deposit } = parseNote(noteString);
-      torPort = program.tor;
+
       await init({ rpc: program.rpc, noteNetId: netId, currency, amount });
       const depositInfo = await loadDepositData({ amount, currency, deposit });
       const depositDate = new Date(depositInfo.timestamp * 1000);
@@ -1448,12 +1509,11 @@ async function main() {
       'Sync the local cache file of deposit / withdrawal events for specific currency.'
     )
     .action(async (type, currency, amount) => {
-      if (program.onlyrpc) {
-        privateRpc = true;
-      }
-      console.log("Starting event sync command");
       currency = currency.toLowerCase();
-      torPort = program.tor;
+
+      statePreferences(program)
+      console.log("Starting event sync command");
+
       await init({ rpc: program.rpc, type, currency, amount });
       const cachedEvents = await fetchEvents({ type, currency, amount });
       console.log("Synced event for", type, amount, currency.toUpperCase(), netName, "Tornado instance to block", cachedEvents[cachedEvents.length - 1].blockNumber);
