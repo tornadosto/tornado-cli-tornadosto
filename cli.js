@@ -1038,7 +1038,7 @@ async function fetchEvents({ type, currency, amount, filterEvents }) {
         await updateCache(fetchedEvents);
       }
 
-      await addZeroEvent(targetBlock - 1);
+      await addZeroEvent(targetBlock);
     } catch (error) {
       console.log(error);
       throw new Error('Error while updating cache');
