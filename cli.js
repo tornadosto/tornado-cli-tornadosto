@@ -931,6 +931,17 @@ async function fetchEvents({ type, currency, amount }) {
   console.log('Loaded cached', amount, currency.toUpperCase(), type, 'events for', startBlock, 'block');
   console.log('Fetching', amount, currency.toUpperCase(), type, 'events for', netName, 'network');
 
+  async function updateCache(fetchedEvents) {
+    try {
+      const fileName = `./cache/${netName.toLowerCase()}/${type}s_${currency}_${amount}.json`;
+      const localEvents = await initJson(fileName);
+      const events = localEvents.concat(fetchedEvents);
+      await fs.writeFileSync(fileName, JSON.stringify(events, null, 2), 'utf8');
+    } catch (error) {
+      throw new Error('Writing cache file failed:', error);
+    }
+  }
+
   async function syncEvents() {
     try {
       let targetBlock = await web3.eth.getBlockNumber();
@@ -1005,18 +1016,8 @@ async function fetchEvents({ type, currency, amount }) {
           }
         }
 
-        async function updateCache() {
-          try {
-            const fileName = `./cache/${netName.toLowerCase()}/${type}s_${currency}_${amount}.json`;
-            const localEvents = await initJson(fileName);
-            const events = localEvents.concat(fetchedEvents);
-            await fs.writeFileSync(fileName, JSON.stringify(events, null, 2), 'utf8');
-          } catch (error) {
-            throw new Error('Writing cache file failed:', error);
-          }
-        }
         await fetchWeb3Events(i);
-        await updateCache();
+        await updateCache(fetchedEvents);
       }
     } catch (error) {
       console.log(error);
@@ -1140,17 +1141,6 @@ async function fetchEvents({ type, currency, amount }) {
         }
       } catch (error) {
         console.error(error);
-      }
-    }
-
-    async function updateCache(fetchedEvents) {
-      try {
-        const fileName = `./cache/${netName.toLowerCase()}/${type}s_${currency}_${amount}.json`;
-        const localEvents = await initJson(fileName);
-        const events = localEvents.concat(fetchedEvents);
-        await fs.writeFileSync(fileName, JSON.stringify(events, null, 2), 'utf8');
-      } catch (error) {
-        throw new Error('Writing cache file failed:', error);
       }
     }
 
