@@ -899,6 +899,14 @@ function initJson(file) {
   });
 }
 
+/**
+ * Erase all zero events from events tree array
+ * @param events Events tree array
+ */
+function filterZeroEvents(events) {
+  return events.filter((event) => event.transactionHash !== null);
+}
+
 function loadCachedEvents({ type, currency, amount }) {
   try {
     const module = require(`./cache/${netName.toLowerCase()}/${type}s_${currency}_${amount}.json`);
@@ -907,7 +915,7 @@ function loadCachedEvents({ type, currency, amount }) {
       const events = module;
 
       return {
-        events,
+        events: filterZeroEvents(events),
         lastBlock: events[events.length - 1].blockNumber
       };
     }
@@ -920,10 +928,11 @@ function loadCachedEvents({ type, currency, amount }) {
   }
 }
 
-async function fetchEvents({ type, currency, amount }) {
+async function fetchEvents({ type, currency, amount, filterEvents }) {
   if (type === 'withdraw') {
     type = 'withdrawal';
   }
+  if (filterEvents === undefined) filterEvents = true;
 
   const cachedEvents = loadCachedEvents({ type, currency, amount });
   const startBlock = cachedEvents.lastBlock + 1;
@@ -935,11 +944,24 @@ async function fetchEvents({ type, currency, amount }) {
     try {
       const fileName = `./cache/${netName.toLowerCase()}/${type}s_${currency}_${amount}.json`;
       const localEvents = await initJson(fileName);
-      const events = localEvents.concat(fetchedEvents);
+      const events = filterZeroEvents(localEvents).concat(fetchedEvents);
       await fs.writeFileSync(fileName, JSON.stringify(events, null, 2), 'utf8');
     } catch (error) {
       throw new Error('Writing cache file failed:', error);
     }
+  }
+
+  /**
+   * Adds an zero (empty) event to the end of the events list
+   * If tornado transactions on the selected currency/amount are rare and the last one was much earlier than the current block,
+   * it helps to quickly synchronize the events tree
+   * @param blockNumber Latest block number on selected chain
+   */
+  async function addZeroEvent(blockNumber) {
+    const zeroEvent = { blockNumber, transactionHash: null };
+    await updateCache([zeroEvent]);
+
+    console.log('Added', amount, currency.toUpperCase(), type, 'zero event to block:', blockNumber);
   }
 
   async function syncEvents() {
@@ -1019,6 +1041,8 @@ async function fetchEvents({ type, currency, amount }) {
         await fetchWeb3Events(i);
         await updateCache(fetchedEvents);
       }
+
+      await addZeroEvent(targetBlock - 1);
     } catch (error) {
       console.log(error);
       throw new Error('Error while updating cache');
@@ -1193,7 +1217,7 @@ async function fetchEvents({ type, currency, amount }) {
     return updatedEvents;
   }
   const events = await loadUpdatedEvents();
-  return events;
+  return filterEvents ? filterZeroEvents(events) : events;
 }
 
 /**
@@ -1600,7 +1624,7 @@ async function main() {
       console.log('Starting event sync command');
 
       await init({ rpc: program.rpc, type, currency, amount });
-      const cachedEvents = await fetchEvents({ type, currency, amount });
+      const cachedEvents = await fetchEvents({ type, currency, amount, filterEvents: false });
       console.log(
         'Synced event for',
         type,
