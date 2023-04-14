@@ -1031,11 +1031,7 @@ async function fetchEvents({ type, currency, amount, filterEvents }) {
             )
             .catch(console.log);
 
-          if (type === 'deposit') {
-            mapDepositEvents();
-          } else {
-            mapWithdrawEvents();
-          }
+          mapLatestEvents();
         }
 
         await fetchWeb3Events(i);
@@ -1046,7 +1042,6 @@ async function fetchEvents({ type, currency, amount, filterEvents }) {
     } catch (error) {
       console.log(error);
       throw new Error('Error while updating cache');
-      process.exit(1);
     }
   }
 
