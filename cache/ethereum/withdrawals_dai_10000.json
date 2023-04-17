@@ -19892,5 +19892,37 @@
     "nullifierHash": "0x2ee3b6570fadef159617dce427bb1c1e80b679ed35a7abcf3908384f0e80794c",
     "to": "0x58B65300F770fD170Fd04ff3e15E3ecb8B30a0FF",
     "fee": "0"
+  },
+  {
+    "blockNumber": 16884109,
+    "transactionHash": "0x593c8493422cf7f4a80aa36261a4607ef9a424c61d10da2abf7adc2012776662",
+    "nullifierHash": "0x099cfdba43f5ed92d888cbb40266f7af9a3f9fec7130596a79bb526dff6b9f29",
+    "to": "0x232e34306EF4a750980EF987865FA9F69CDcfAd9",
+    "fee": "0"
+  },
+  {
+    "blockNumber": 16884928,
+    "transactionHash": "0xf11090cf99aea9a18e22862c9ae9cacac586a8824b36bb46c7c7ba3ebfcf7482",
+    "nullifierHash": "0x2ea5c690117323de2bc2c2eb0578dfc859c0e8c1dc3ce3c8206dbb5db6f3457a",
+    "to": "0xc8c0367ef1c0573262A97C0c8C698f66fD1e01C2",
+    "fee": "66576563063297032182"
+  },
+  {
+    "blockNumber": 16937931,
+    "transactionHash": "0xe6a5d2763be76981593e705122283581bd4d7b965086ce44934413ffa7de60df",
+    "nullifierHash": "0x06d98b187ba158428cf5ccb2dedb7b39e80f5065ed0c5eb1e5461a82b5f2ff5d",
+    "to": "0xC2C9E1814486Ad41668dbC53f2b26ED05be0BDF5",
+    "fee": "75615551169946739936"
+  },
+  {
+    "blockNumber": 17038327,
+    "transactionHash": "0x4d13d6551feaf13d3d82ddd2b4a2243b79ec39dea465cb4e80430d16cb1e34d8",
+    "nullifierHash": "0x02464a66d67dc0ef27f8f06786407c0955f55848fdfc7b95cb05f52d04e55ae8",
+    "to": "0xDBe19869fD32C336C4c29C572007723e871eC6B6",
+    "fee": "121624773277434609458"
+  },
+  {
+    "blockNumber": 17048783,
+    "transactionHash": null
   }
 ]

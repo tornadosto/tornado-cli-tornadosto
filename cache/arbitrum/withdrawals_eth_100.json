@@ -264,5 +264,9 @@
     "nullifierHash": "0x1877535a395998ece142037cbbb4e2cd6547aefe3e6cf703f820d6207afe992b",
     "to": "0x346ccFdee95c7Bd36b60bfE028D0f40d3517f22F",
     "fee": "151260285832700000"
+  },
+  {
+    "blockNumber": 80797791,
+    "transactionHash": null
   }
 ]
