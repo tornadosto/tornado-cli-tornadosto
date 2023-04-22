@@ -110,6 +110,39 @@ async function printERC20Balance({ address, name, tokenAddress }) {
   console.log(`${name}`, tokenName, `Balance is`, rmDecimalBN(tokenBalance), tokenSymbol);
 }
 
+/**
+ * Compute merkle tree and its root from array of cached deposit events
+ * @param {Array} depositEvents Array of deposit event objects
+ * @returns {Object} treeData
+ * @returns {String[]} treeData.leaves Commitment hashes converted to decimals
+ * @returns {@link MerkleTree} treeData.tree Builded merkle tree
+ * @returns {String} treeData.root Merkle tree root
+ */
+function computeDepositEventsTree(depositEvents) {
+  const leaves = depositEvents
+    .sort((a, b) => a.leafIndex - b.leafIndex) // Sort events in chronological order
+    .map((e) => toBN(e.commitment).toString(10)); // Leaf = commitment pedersen hash of deposit
+
+  console.log('Computing deposit events merkle tree and its root');
+  const tree = new merkleTree(MERKLE_TREE_HEIGHT, leaves);
+
+  return { leaves, tree, root: tree.root() };
+}
+
+/**
+ * Check validity of events merkle tree root via tornado contract
+ * @async
+ * @param {Array} depositEvents
+ * @returns {boolean} True, if root is valid, else false
+ * @throws {Error}
+ */
+async function isRootValid(depositEvents) {
+  const { root } = computeDepositEventsTree(depositEvents);
+  const isRootValid = await tornadoContract.methods.isKnownRoot(toHex(root)).call();
+
+  return isRootValid;
+}
+
 async function submitTransaction(signedTX) {
   console.log('Submitting transaction to the remote node');
   await web3.eth
@@ -1217,7 +1250,7 @@ async function fetchEvents({ type, currency, amount, filterEvents }) {
 
 /**
  * Parses Tornado.cash note
- * @param noteString the note
+ * @param noteString the notenullifier
  */
 function parseNote(noteString) {
   const noteRegex = /tornado-(?<currency>\w+)-(?<amount>[\d.]+)-(?<netId>\d+)-0x(?<note>[0-9a-fA-F]{124})/g;
@@ -1628,6 +1661,28 @@ async function main() {
         netName,
         'Tornado instance to block',
         cachedEvents[cachedEvents.length - 1].blockNumber
+      );
+    });
+  program
+    .command('checkCacheValidity <currency> <amount>')
+    .description('Check cache file of deposit events for specific currency for validity of the root.')
+    .action(async (currency, amount) => {
+      statePreferences(program);
+
+      const type = 'deposit';
+
+      await init({ rpc: program.rpc, type, currency: currency.toLowerCase(), amount });
+      const depositCachedEvents = await fetchEvents({ type, currency, amount });
+      const isValidRoot = await isRootValid(depositCachedEvents);
+
+      console.log(
+        '\nDeposit events tree for',
+        amount,
+        currency.toUpperCase(),
+        'on',
+        netName,
+        'chain',
+        isValidRoot ? 'has valid root' : 'is invalid, unknown root. You need to reset cache to zero array or to latest git state'
       );
     });
   program.command('parseNote <note>').action(async (noteString) => {
