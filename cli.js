@@ -1250,7 +1250,7 @@ async function fetchEvents({ type, currency, amount, filterEvents }) {
 
 /**
  * Parses Tornado.cash note
- * @param noteString the notenullifier
+ * @param noteString the note
  */
 function parseNote(noteString) {
   const noteRegex = /tornado-(?<currency>\w+)-(?<amount>[\d.]+)-(?<netId>\d+)-0x(?<note>[0-9a-fA-F]{124})/g;
