@@ -373,25 +373,12 @@ async function deposit({ currency, amount, commitmentNote }) {
  * @param deposit Deposit object
  */
 async function generateMerkleProof(deposit, currency, amount) {
-  let leafIndex = -1;
   // Get all deposit events from smart contract and assemble merkle tree from them
-
   const cachedEvents = await fetchEvents({ type: 'deposit', currency, amount });
+  const { tree, leaves, root } = computeDepositEventsTree(cachedEvents);
 
-  const leaves = cachedEvents
-    .sort((a, b) => a.leafIndex - b.leafIndex) // Sort events in chronological order
-    .map((e) => {
-      const index = toBN(e.leafIndex).toNumber();
-
-      if (toBN(e.commitment).eq(toBN(deposit.commitmentHex))) {
-        leafIndex = index;
-      }
-      return toBN(e.commitment).toString(10);
-    });
-  const tree = new merkleTree(MERKLE_TREE_HEIGHT, leaves);
-
-  // Validate that our data is correct
-  const root = tree.root();
+  // Validate that merkle tree is valid, deposit data is correct and note not spent.
+  const leafIndex = leaves.findIndex((commitment) => toBN(deposit.commitmentHex).toString(10) === commitment);
   let isValidRoot, isSpent;
   if (!isTestRPC && !multiCall) {
     const callContract = await useMultiCall([
