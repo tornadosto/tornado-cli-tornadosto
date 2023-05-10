@@ -38,17 +38,17 @@ If you want to use Tor connection to conceal ip address, install [Tor Browser](h
 Note that you should reset your tor connection by restarting the browser every time when you deposit & withdraw otherwise you will have the same exit node used for connection.
 
 ### Goerli, Mainnet, Binance Smart Chain, Gnosis Chain, Polygon Network, Arbitrum, Avalanche
-1. Add `PRIVATE_KEY` to `.env` file
-2. `node cli.js --help`
-3. If you want to use secure, anonymous tor connection add `--tor <torPort>` behind the command.
+1. `node cli.js --help`
+2. If you want to use secure, anonymous tor connection add `--tor <torPort>` behind the command.
+3. Add `PRIVATE_KEY` to `.env` file (optional, only if you want to use it for many operations) - open `.env.example` file, add private key after `PRIVATE_KEY=` and rename file to `.env`.
 
 #### To deposit:
 
 ```bash
-$ node cli.js deposit <currency> <amount> --rpc <rpc url> --tor <torPort>
+$ node cli.js deposit <currency> <amount> --rpc <rpc url> --tor <torPort> --private-key <private key>
 ```
 
-Note that `--tor <torPort>` is optional.
+Note that `--tor <torPort>` is optional, and use `--private-key <private key>` only if you didn't add it to `.env` file.
 
 For RPC nodes please refer to the list of public RPC nodes below.
 
@@ -67,16 +67,14 @@ Sender account ETH balance is 1004873.361652048361352542
 #### To withdraw:
 
 ```bash
-$ node cli.js withdraw <note> <recipient> --rpc <rpc url> --relayer <relayer url> --tor <torPort>
+$ node cli.js withdraw <note> <recipient> --rpc <rpc url> --relayer <relayer url> --tor <torPort> --private-key <private key>
 ```
 
-Note that `--relayer <relayer url>`, `--tor <torPort>` is optional.
+Note that `--relayer <relayer url>`, `--tor <torPort>` is optional, and use `--private-key <private key>` only if you withdraw without relayer.
 
 If you want to use Tornado Cash relayer for your first withdrawal to your new ethereum account, please refer to the list of relayers below.
 
-If you don't need relayer while doing withdrawals, you must apply your withdrawal account's private key to `.env` file.
-
-Copy the `PRIVATE_KEY=` line of `.env.example` to `.env`, and add your private key behind the `=`.
+If you don't need relayer while doing withdrawals, you must provide your withdrawal account's private key - either as parameter, or by adding it to `.env` file.
 
 ##### Example:
 

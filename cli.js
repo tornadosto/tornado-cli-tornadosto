@@ -1368,7 +1368,7 @@ async function promptConfirmation() {
 /**
  * Init web3, contracts, and snark
  */
-async function init({ rpc, noteNetId, currency = 'dai', amount = '100', balanceCheck, localMode }) {
+async function init({ rpc, noteNetId, currency = 'dai', amount = '100', balanceCheck, localMode, privateKey }) {
   let contractJson, instanceJson, erc20ContractJson, erc20tornadoJson, tornadoAddress, tokenAddress;
   let ipOptions = {};
 
@@ -1428,13 +1428,13 @@ async function init({ rpc, noteNetId, currency = 'dai', amount = '100', balanceC
   MERKLE_TREE_HEIGHT = process.env.MERKLE_TREE_HEIGHT || 20;
   ETH_AMOUNT = process.env.ETH_AMOUNT;
   TOKEN_AMOUNT = process.env.TOKEN_AMOUNT;
-  const privKey = process.env.PRIVATE_KEY;
+  const privKey = privateKey || process.env.PRIVATE_KEY;
 
   if (privKey) {
-    if (privKey.includes('0x')) {
-      PRIVATE_KEY = process.env.PRIVATE_KEY.substring(2);
+    if (privKey.startsWith('0x')) {
+      PRIVATE_KEY = privKey.substring(2);
     } else {
-      PRIVATE_KEY = process.env.PRIVATE_KEY;
+      PRIVATE_KEY = privKey;
     }
   }
   if (PRIVATE_KEY) {
@@ -1502,6 +1502,7 @@ async function main() {
     .option('-r, --rpc <URL>', 'The RPC that CLI should interact with', 'http://localhost:8545')
     .option('-R, --relayer <URL>', 'Withdraw via relayer')
     .option('-T, --tor <PORT>', 'Optional tor port')
+    .option('-p, --private-key <KEY>', "Wallet private key - If you didn't add it to .env file and it is needed for operation")
     .option('-S --gas_speed <SPEED>', 'Gas speed preference [ instant, fast, standard, low ]')
     .option('-N --noconfirmation', 'No confirmation mode - Does not query confirmation ')
     .option('-L, --local-rpc', 'Local node mode - Does not submit signed transaction to the node')
@@ -1522,7 +1523,7 @@ async function main() {
       statePreferences(program);
 
       const { currency, amount, netId, commitmentNote } = parseInvoice(invoice);
-      await init({ rpc: program.rpc, currency, amount, localMode: program.local });
+      await init({ rpc: program.rpc, currency, amount, localMode: program.local, privateKey: program.privateKey });
       console.log('Creating', currency.toUpperCase(), amount, 'deposit for', netName, 'Tornado Cash Instance');
       await deposit({ currency, amount, commitmentNote });
     });
@@ -1536,7 +1537,7 @@ async function main() {
 
       statePreferences(program);
 
-      await init({ rpc: program.rpc, currency, amount, localMode: program.local });
+      await init({ rpc: program.rpc, currency, amount, localMode: program.local, privateKey: program.privateKey });
       await deposit({ currency, amount });
     });
   program
@@ -1549,7 +1550,14 @@ async function main() {
 
       const { currency, amount, netId, deposit } = parseNote(noteString);
 
-      await init({ rpc: program.rpc, noteNetId: netId, currency, amount, localMode: program.local });
+      await init({
+        rpc: program.rpc,
+        noteNetId: netId,
+        currency,
+        amount,
+        localMode: program.local,
+        privateKey: program.privateKey
+      });
       await withdraw({
         deposit,
         currency,
@@ -1581,7 +1589,7 @@ async function main() {
     .action(async (address, amount, tokenAddress) => {
       statePreferences(program);
 
-      await init({ rpc: program.rpc, balanceCheck: true, localMode: program.local });
+      await init({ rpc: program.rpc, balanceCheck: true, localMode: program.local, privateKey: program.privateKey });
       await send({ address, amount, tokenAddress });
     });
   program
@@ -1693,7 +1701,7 @@ async function main() {
       console.log('Start performing ETH deposit-withdraw test');
       let currency = 'eth';
       let amount = '0.1';
-      await init({ rpc: program.rpc, currency, amount });
+      await init({ rpc: program.rpc, currency, amount, privateKey: program.privateKey });
       let noteString = await deposit({ currency, amount });
       let parsedNote = parseNote(noteString);
       await withdraw({
