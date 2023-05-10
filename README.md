@@ -1,6 +1,6 @@
 # Tornado-CLI
 
-Command line tool to interact with [Tornado Cash](https://tornadocashcommunity.eth.link).
+Command line tool to interact with [Tornado Cash](https://tornado.ws).
 
 ### Warning!
 Current cli version doesn't support [Anonymity Mining](https://tornado-cash.medium.com/tornado-cash-governance-proposal-a55c5c7d0703)
@@ -19,12 +19,10 @@ You also need to install C++ build tools in order to do 'npm install', for more 
 If you have git installed on your system, clone the master branch.
 
 ```bash
-$ git clone https://development.tornadocash.community/tornadocash/tornado-cli
+$ git clone https://git.tornado.ws/tornadocash/tornado-cli
 ```
 
-Or, download the archive file from github
-
-https://development.tornadocash.community/tornadocash/tornado-cli/archive/refs/heads/master.zip
+Or, download the archive file from git: https://git.tornado.ws/tornadocash/tornado-cli/archive/master.zip
 
 After downloading or cloning the repository, you must install necessary libraries using the following command.
 
@@ -54,7 +52,7 @@ For RPC nodes please refer to the list of public RPC nodes below.
 
 ##### Example:
 ```bash
-$ node cli.js deposit ETH 0.1 --rpc https://goerli.infura.io/v3/9aa3d95b3bc440fa88ea12eaa4456161 --tor 9150
+$ node cli.js deposit ETH 0.1 --rpc https://mainnet.chainnodes.org/d692ae63-0a7e-43e0-9da9-fe4f4cc6c607 --tor 9150
 
 Your note: tornado-eth-0.1-5-0xf73dd6833ccbcc046c44228c8e2aa312bf49e08389dadc7c65e6a73239867b7ef49c705c4db227e2fadd8489a494b6880bdcb6016047e019d1abec1c7652
 Tornado ETH balance is 8.9
@@ -79,7 +77,7 @@ If you don't need relayer while doing withdrawals, you must provide your withdra
 ##### Example:
 
 ```bash
-$ node cli.js withdraw tornado-eth-0.1-5-0xf73dd6833ccbcc046c44228c8e2aa312bf49e08389dadc7c65e6a73239867b7ef49c705c4db227e2fadd8489a494b6880bdcb6016047e019d1abec1c7652 0x8589427373D6D84E98730D7795D8f6f8731FDA16 --rpc https://goerli.infura.io/v3/9aa3d95b3bc440fa88ea12eaa4456161 --relayer https://goerli-frelay.duckdns.org --tor 9150
+$ node cli.js withdraw tornado-eth-0.1-5-0xf73dd6833ccbcc046c44228c8e2aa312bf49e08389dadc7c65e6a73239867b7ef49c705c4db227e2fadd8489a494b6880bdcb6016047e019d1abec1c7652 0x8589427373D6D84E98730D7795D8f6f8731FDA16 --rpc https://mainnet.chainnodes.org/d692ae63-0a7e-43e0-9da9-fe4f4cc6c607 --relayer https://goerli-relay.example.org --tor 9150
 
 Relay address:  0x6A31736e7490AbE5D5676be059DFf064AB4aC754
 Getting current state from tornado contract
@@ -139,42 +137,19 @@ Tornado contract balance is xxx.x ETH
 Sender account balance is x.xxxxxxx ETH
 ```
 
-#### To withdraw, you will need deposit note that matches with your deposit transaction.
-
-```bash
-$ node cli.js withdraw <note> <recipient>
-```
-
-##### Example:
-
-```bash
-$ node cli.js withdraw tornado-eth-0.1-5-0xf73dd6833ccbcc046c44228c8e2aa312bf49e08389dadc7c65e6a73239867b7ef49c705c4db227e2fadd8489a494b6880bdcb6016047e019d1abec1c7652 0x8589427373D6D84E98730D7795D8f6f8731FDA16 --rpc https://goerli.infura.io/v3/9aa3d95b3bc440fa88ea12eaa4456161 --relayer https://goerli-frelay.duckdns.org --tor 9150
-
-Relay address:  0x6A31736e7490AbE5D5676be059DFf064AB4aC754
-Getting current state from tornado contract
-Generating SNARK proof
-Proof time: 9117.051ms
-Sending withdraw transaction through relay
-Transaction submitted through the relay. View transaction on etherscan https://goerli.etherscan.io/tx/0xcb21ae8cad723818c6bc7273e83e00c8393fcdbe74802ce5d562acad691a2a7b
-Transaction mined in block 17036120
-Done
-```
-
-### List of public rpc & relayers for withdrawal
-
-Infura API key fetched from https://rpc.info (Same one with Metamask)
+### List of rpc & relayers for withdrawal
 
 ```json
 {
    "netId1":{
       "rpcUrls":{
          "publicRpc1":{
-            "name":"SecureRPC",
-            "url":"https://api.securerpc.com/v1"
+            "name":"1RPC",
+            "url":"https://1rpc.io/eth"
          },
-         "publicRpc2":{
-            "name":"CloudFlare",
-            "url":"https://cloudflare-eth.com"
+         "Chainnodes":{
+             "name": "Chainnodes",
+             "url": "https://mainnet.chainnodes.org/d692ae63-0a7e-43e0-9da9-fe4f4cc6c607"
          }
       },
       "relayers": {
@@ -274,7 +249,7 @@ Infura API key fetched from https://rpc.info (Same one with Metamask)
       "rpcUrls":{
          "publicRpc1":{
             "name":"BSC Public RPC 1",
-            "url":"https://bsc-dataseed.binance.org"
+            "url":"https://1rpc.io/bnb"
          },
          "publicRpc2":{
             "name":"BSC Public RPC 2",
@@ -363,7 +338,7 @@ Infura API key fetched from https://rpc.info (Same one with Metamask)
          "publicRpc":{
             "name":"Gnosis Chain RPC",
             "url":"https://rpc.gnosischain.com"
-         },
+         }
       },
       "relayers":{
         "torndao.eth": {
@@ -376,20 +351,12 @@ Infura API key fetched from https://rpc.info (Same one with Metamask)
    "netId137":{
       "rpcUrls":{
          "publicRpc1":{
-            "name":"publicRpc1",
-            "url":"https://rpc-mainnet.maticvigil.com"
+            "name":"1RPC",
+            "url":"https://1rpc.io/matic"
          },
-         "publicRpc2":{
-            "name":"publicRpc2",
-            "url":"https://rpc-mainnet.matic.network"
-         },
-         "publicRpc3":{
-            "name":"publicRpc3",
-            "url":"https://matic-mainnet.chainstacklabs.com"
-         },
-         "MyEtherWallet":{
-            "name":"MyEtherWallet",
-            "url":"https://nodes.mewapi.io/ws/matic"
+         "Chainnodes":{
+             "name": "Chainnodes",
+             "url": "https://polygon-mainnet.chainnodes.org/d692ae63-0a7e-43e0-9da9-fe4f4cc6c607"
          }
       },
       "relayers": {        
@@ -440,6 +407,10 @@ Infura API key fetched from https://rpc.info (Same one with Metamask)
          "publicRpc1":{
             "name":"Arbitrum Public RPC",
             "url":"https://arb1.arbitrum.io/rpc"
+         },
+         "publicRpc2":{
+             "name": "ChainnodesRPC",
+             "url": "https://arbitrum-one.chainnodes.org/d692ae63-0a7e-43e0-9da9-fe4f4cc6c607"
          }
       },
       "relayers":{
@@ -458,8 +429,8 @@ Infura API key fetched from https://rpc.info (Same one with Metamask)
    "netId43114":{
       "rpcUrls":{
          "publicRpc":{
-            "name":"Avalanche RPC",
-            "url":"https://api.avax.network/ext/bc/C/rpc"
+            "name":"1RPC",
+            "url":"https://1rpc.io/avax/c"
          }
       },
       "relayers":{
@@ -487,9 +458,13 @@ Infura API key fetched from https://rpc.info (Same one with Metamask)
    },
    "netId10":{
       "rpcUrls":{
-         "Optimism":{
-            "name":"Optimism Public RPC",
-            "url":"https://mainnet.optimism.io"
+         "publicRpc1":{
+            "name":"1RPC",
+            "url":"https://1rpc.io/op"
+         },
+         "Chainnodes":{
+             "name": "Chainnodes",
+             "url": "https://optimism-mainnet.chainnodes.org/d692ae63-0a7e-43e0-9da9-fe4f4cc6c607"
          }
       },
       "relayers":{
@@ -502,18 +477,10 @@ Infura API key fetched from https://rpc.info (Same one with Metamask)
    },
    "netId5":{
       "rpcUrls":{
-         "publicRpc1":{
-            "name":"Infura",
-            "url":"https://goerli.infura.io/v3/9aa3d95b3bc440fa88ea12eaa4456161"
-         },
-         "Slockit":{
-            "name":"Slockit",
-            "url":"https://rpc.slock.it/goerli"
-         },
-         "Prylabs":{
-            "name":"Prylabs",
-            "url":"https://goerli.prylabs.net"
-         },
+         "Chainnodes":{
+            "name":"Chainnodes RPC",
+            "url":"https://goerli.chainnodes.org/d692ae63-0a7e-43e0-9da9-fe4f4cc6c607"
+         }
       },
       "relayers":{}
    }
