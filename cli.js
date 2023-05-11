@@ -1348,7 +1348,7 @@ function statePreferences(program) {
   if (program.noconfirmation) {
     shouldPromptConfirmation = false;
   }
-  if (program.onlyrpc) {
+  if (program.onlyRpc) {
     privateRpc = true;
   }
   if (program.tor) {
@@ -1503,7 +1503,7 @@ async function main() {
     .option('-R, --relayer <URL>', 'Withdraw via relayer')
     .option('-T, --tor <PORT>', 'Optional tor port')
     .option('-p, --private-key <KEY>', "Wallet private key - If you didn't add it to .env file and it is needed for operation")
-    .option('-S --gas_speed <SPEED>', 'Gas speed preference [ instant, fast, standard, low ]')
+    .option('-S --gas-speed <SPEED>', 'Gas speed preference [ instant, fast, standard, low ]')
     .option('-N --noconfirmation', 'No confirmation mode - Does not query confirmation ')
     .option('-L, --local-rpc', 'Local node mode - Does not submit signed transaction to the node')
     .option('-o, --only-rpc', 'Only rpc mode - Does not enable thegraph api nor remote ip detection');
@@ -1523,7 +1523,14 @@ async function main() {
       statePreferences(program);
 
       const { currency, amount, netId, commitmentNote } = parseInvoice(invoice);
-      await init({ rpc: program.rpc, currency, amount, localMode: program.local, privateKey: program.privateKey });
+      await init({
+        rpc: program.rpc,
+        currency,
+        amount,
+        localMode: program.localRpc,
+        privateKey: program.privateKey,
+        noteNetId: netId
+      });
       console.log('Creating', currency.toUpperCase(), amount, 'deposit for', netName, 'Tornado Cash Instance');
       await deposit({ currency, amount, commitmentNote });
     });
@@ -1537,7 +1544,7 @@ async function main() {
 
       statePreferences(program);
 
-      await init({ rpc: program.rpc, currency, amount, localMode: program.local, privateKey: program.privateKey });
+      await init({ rpc: program.rpc, currency, amount, localMode: program.localRpc, privateKey: program.privateKey });
       await deposit({ currency, amount });
     });
   program
@@ -1555,7 +1562,7 @@ async function main() {
         noteNetId: netId,
         currency,
         amount,
-        localMode: program.local,
+        localMode: program.localRpc,
         privateKey: program.privateKey
       });
       await withdraw({
@@ -1589,7 +1596,7 @@ async function main() {
     .action(async (address, amount, tokenAddress) => {
       statePreferences(program);
 
-      await init({ rpc: program.rpc, balanceCheck: true, localMode: program.local, privateKey: program.privateKey });
+      await init({ rpc: program.rpc, balanceCheck: true, localMode: program.localRpc, privateKey: program.privateKey });
       await send({ address, amount, tokenAddress });
     });
   program
