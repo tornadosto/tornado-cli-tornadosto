@@ -26,6 +26,7 @@ const prompt = readline.createInterface({ input: process.stdin, output: process.
 const gasSpeedPreferences = ['instant', 'fast', 'standard', 'low'];
 
 let web3,
+  oracle,
   torPort,
   tornado,
   tornadoContract,
@@ -834,11 +835,9 @@ async function fetchGasPrice() {
     /** Gas preferences **/
     console.log('Gas speed preference: ', preferenceSpeed);
     /** ----------------------------------------------- **/
-    const options = { chainId: netId };
 
     try {
       const isLegacy = !eipGasSupport;
-      const oracle = new GasPriceOracle(options);
       const gas = await oracle.gasPrices({ isLegacy });
 
       if (netId === 1) {
@@ -1404,6 +1403,7 @@ async function init({ rpc, noteNetId, currency = 'dai', amount = '100', balanceC
     console.log('Connecting to remote node');
     web3 = new Web3(rpc, null, { transactionConfirmationBlocks: 1 });
   }
+  oracle = new GasPriceOracle({ chainId: web3.eth.getChainId(), defaultRpc: rpc });
 
   const rpcHost = new URL(rpc).hostname;
   const isIpPrivate = is_ip_private(rpcHost);
