@@ -62,15 +62,11 @@ module.exports = {
         usdc: {
           instanceAddress: {
             100: '0xd96f2B1c14Db8458374d9Aca76E26c3D18364307',
-            1000: '0x4736dCf1b7A3d580672CcE6E7c65cd5cc9cFBa9D',
-            10000: '',
-            100000: ''
+            1000: '0x4736dCf1b7A3d580672CcE6E7c65cd5cc9cFBa9D'
           },
           deployedBlockNumber: {
             100: 9161958,
-            1000: 9161965,
-            10000: '',
-            100000: ''
+            1000: 9161965
           },
           miningEnabled: false,
           tokenAddress: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48',
@@ -81,15 +77,11 @@ module.exports = {
         usdt: {
           instanceAddress: {
             100: '0x169AD27A470D064DEDE56a2D3ff727986b15D52B',
-            1000: '0x0836222F2B2B24A3F36f98668Ed8F0B38D1a872f',
-            10000: '',
-            100000: ''
+            1000: '0x0836222F2B2B24A3F36f98668Ed8F0B38D1a872f'
           },
           deployedBlockNumber: {
             100: 9162005,
-            1000: 9162012,
-            10000: '',
-            100000: ''
+            1000: 9162012
           },
           miningEnabled: false,
           tokenAddress: '0xdAC17F958D2ee523a2206206994597C13D831ec7',
@@ -101,14 +93,11 @@ module.exports = {
           instanceAddress: {
             0.1: '0x178169B423a011fff22B9e3F3abeA13414dDD0F1',
             1: '0x610B717796ad172B316836AC95a2ffad065CeaB4',
-            10: '0xbB93e510BbCD0B7beb5A853875f9eC60275CF498',
-            100: ''
+            10: '0xbB93e510BbCD0B7beb5A853875f9eC60275CF498'
           },
           deployedBlockNumber: {
             0.1: 12067529,
-            1: 12066652,
-            10: 12067591,
-            100: ''
+            1: 12066652
           },
           miningEnabled: true,
           tokenAddress: '0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599',
@@ -182,15 +171,11 @@ module.exports = {
         usdc: {
           instanceAddress: {
             100: '0x05E0b5B40B7b66098C2161A5EE11C5740A3A7C45',
-            1000: '0x23173fE8b96A4Ad8d2E17fB83EA5dcccdCa1Ae52',
-            10000: '',
-            100000: ''
+            1000: '0x23173fE8b96A4Ad8d2E17fB83EA5dcccdCa1Ae52'
           },
           deployedBlockNumber: {
             100: 4441426,
-            1000: 4441492,
-            10000: '',
-            100000: ''
+            1000: 4441492
           },
           miningEnabled: false,
           tokenAddress: '0xD87Ba7A50B2E7E660f678A895E4B72E7CB4CCd9C',
@@ -201,15 +186,11 @@ module.exports = {
         usdt: {
           instanceAddress: {
             100: '0x538Ab61E8A9fc1b2f93b3dd9011d662d89bE6FE6',
-            1000: '0x94Be88213a387E992Dd87DE56950a9aef34b9448',
-            10000: '',
-            100000: ''
+            1000: '0x94Be88213a387E992Dd87DE56950a9aef34b9448'
           },
           deployedBlockNumber: {
             100: 4441490,
-            1000: 4441492,
-            10000: '',
-            100000: ''
+            1000: 4441492
           },
           miningEnabled: false,
           tokenAddress: '0xb7FC2023D96AEa94Ba0254AA5Aeb93141e4aad66',
@@ -221,14 +202,12 @@ module.exports = {
           instanceAddress: {
             0.1: '0x242654336ca2205714071898f67E254EB49ACdCe',
             1: '0x776198CCF446DFa168347089d7338879273172cF',
-            10: '0xeDC5d01286f99A066559F60a585406f3878a033e',
-            100: ''
+            10: '0xeDC5d01286f99A066559F60a585406f3878a033e'
           },
           deployedBlockNumber: {
             0.1: 4441488,
             1: 4441490,
-            10: 4441490,
-            100: ''
+            10: 4441490
           },
           miningEnabled: true,
           tokenAddress: '0xC04B0d3107736C32e19F1c62b2aF67BE61d63a05',
@@ -318,22 +297,24 @@ module.exports = {
       defaultRpc: 'https://polygon-mainnet.chainnodes.org/d692ae63-0a7e-43e0-9da9-fe4f4cc6c607'
     },
     netId42161: {
-      eth: {
-        instanceAddress: {
-          0.1: '0x84443CFd09A48AF6eF360C6976C5392aC5023a1F',
-          1: '0xd47438C816c9E7f2E2888E060936a499Af9582b3',
-          10: '0x330bdFADE01eE9bF63C209Ee33102DD334618e0a',
-          100: '0x1E34A77868E19A6647b1f2F47B51ed72dEDE95DD'
-        },
-        deployedBlockNumber: {
-          0.1: 3300000,
-          1: 3300000,
-          10: 3300000,
-          100: 3300000
-        },
-        miningEnabled: false,
-        symbol: 'ETH',
-        decimals: 18
+      tokens: {
+        eth: {
+          instanceAddress: {
+            0.1: '0x84443CFd09A48AF6eF360C6976C5392aC5023a1F',
+            1: '0xd47438C816c9E7f2E2888E060936a499Af9582b3',
+            10: '0x330bdFADE01eE9bF63C209Ee33102DD334618e0a',
+            100: '0x1E34A77868E19A6647b1f2F47B51ed72dEDE95DD'
+          },
+          deployedBlockNumber: {
+            0.1: 3300000,
+            1: 3300000,
+            10: 3300000,
+            100: 3300000
+          },
+          miningEnabled: false,
+          symbol: 'ETH',
+          decimals: 18
+        }
       },
       proxy: '0x0D5550d52428E7e3175bfc9550207e4ad3859b17',
       multicall: '0xB064Fe785d8131653eE12f3581F9A55F6D6E1ca3',
