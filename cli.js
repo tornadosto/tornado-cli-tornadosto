@@ -1372,6 +1372,8 @@ async function init({ rpc, noteNetId, currency = 'dai', amount = '100', balanceC
   let contractJson, instanceJson, erc20ContractJson, erc20tornadoJson, tornadoAddress, tokenAddress;
   let ipOptions = {};
 
+  if (noteNetId && !rpc) rpc = config.deployments[`netId${noteNetId}`].defaultRpc;
+
   if (torPort && rpc.includes('https')) {
     console.log('Using tor network');
     web3Options = { agent: { https: new SocksProxyAgent('socks5h://127.0.0.1:' + torPort) }, timeout: 60000 };
@@ -1500,7 +1502,7 @@ async function init({ rpc, noteNetId, currency = 'dai', amount = '100', balanceC
 
 async function main() {
   program
-    .option('-r, --rpc <URL>', 'The RPC that CLI should interact with', 'http://localhost:8545')
+    .option('-r, --rpc <URL>', 'The RPC that CLI should interact with')
     .option('-R, --relayer <URL>', 'Withdraw via relayer')
     .option('-T, --tor <PORT>', 'Optional tor port')
     .option('-p, --private-key <KEY>', "Wallet private key - If you didn't add it to .env file and it is needed for operation")
