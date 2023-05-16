@@ -342,7 +342,7 @@ module.exports = {
       proxy: '0x0D5550d52428E7e3175bfc9550207e4ad3859b17',
       multicall: '0x98e2060F672FD1656a07bc12D7253b5e41bF3876',
       subgraph: 'https://api.thegraph.com/subgraphs/name/tornadocash/avalanche-tornado-subgraph',
-      defaultRpc: 'https://1rpc.io/avax/c'
+      defaultRpc: 'https://avalanche-rpc.tornado.ws/ext/bc/C/rpc'
     },
     netId10: {
       tokens: {
