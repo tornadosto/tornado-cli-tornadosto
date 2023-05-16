@@ -457,6 +457,11 @@ async function withdraw({ deposit, currency, amount, recipient, relayerURL, refu
   if (currency === netSymbol.toLowerCase() && refund !== '0') {
     throw new Error('The ETH purchase is supposted to be 0 for ETH withdrawals');
   }
+
+  if (!web3.utils.isAddress(recipient)) {
+    throw new Error('Recipient address is not valid');
+  }
+
   refund = toWei(refund);
   if (relayerURL) {
     if (relayerURL.endsWith('.eth')) {
