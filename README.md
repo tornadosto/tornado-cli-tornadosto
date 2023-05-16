@@ -68,7 +68,8 @@ Sender account ETH balance is 1004873.361652048361352542
 $ node cli.js withdraw <note> <recipient> --rpc <rpc url> --relayer <relayer url> --tor <torPort> --private-key <private key>
 ```
 
-Note that `--relayer <relayer url>`, `--tor <torPort>` is optional, and use `--private-key <private key>` only if you withdraw without relayer.
+Note that `--relayer <relayer url>`, `--tor <torPort>` and `--rpc <rpc url>` are optional parameters, and use `--private-key <private key>` only if you withdraw without relayer.
+You can don't provide RPC link and withdrawal will be made via default RPC for the chain to which note belongs.
 
 If you want to use Tornado Cash relayer for your first withdrawal to your new ethereum account, please refer to the list of relayers below.
 
@@ -117,8 +118,10 @@ Backed up invoice as ./backup-tornadoInvoice-eth-0.1-5-0x1b680c7d.txt
 Creating deposit transaction with `depositInvoice` only requires valid deposit note created by `createNote` command, so that the deposit note could be stored without exposed anywhere.
 
 ```bash
-$ node cli.js depositInvoice <invoice>
+$ node cli.js depositInvoice <invoice> --rpc <rpc url> --tor <tor port>
 ```
+
+Parameter `--rpc <rpc url>` is optional, if you don't provide it, default RPC (corresponding to note chain) will be used.
 
 ##### Example:
 
