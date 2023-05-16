@@ -43015,7 +43015,21 @@
     "timestamp": "1681058410"
   },
   {
-    "blockNumber": 41578350,
+    "blockNumber": 42483988,
+    "transactionHash": "0xcd9b3d6dd9c741fbaf122d3739f29a1baad435e6a2cabd8bd7f35a87769141aa",
+    "commitment": "0x213225d965fee08f49c3303e2faa95cbc06f0a421ca4fc56bd9cab7c5cdfa4b7",
+    "leafIndex": 6145,
+    "timestamp": "1683614920"
+  },
+  {
+    "blockNumber": 42690392,
+    "transactionHash": "0xe362aa3ef921fb34cd4c9a2c62352c161a3c683a78c9b43a86a551299c29939c",
+    "commitment": "0x01cf5ebd316903a7e028c4b3e0f1062407596a0a4e516761d590d4366dfb3285",
+    "leafIndex": 6146,
+    "timestamp": "1684059174"
+  },
+  {
+    "blockNumber": 42786641,
     "transactionHash": null
   }
 ]
