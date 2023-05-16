@@ -1374,7 +1374,7 @@ async function init({ rpc, noteNetId, currency = 'dai', amount = '100', balanceC
 
   if (noteNetId && !rpc) rpc = config.deployments[`netId${noteNetId}`].defaultRpc;
 
-  if (torPort && rpc.includes('https')) {
+  if (torPort && rpc.startsWith('https')) {
     console.log('Using tor network');
     web3Options = { agent: { https: new SocksProxyAgent('socks5h://127.0.0.1:' + torPort) }, timeout: 60000 };
     // Use forked web3-providers-http from local file to modify user-agent header value which improves privacy.
@@ -1383,7 +1383,7 @@ async function init({ rpc, noteNetId, currency = 'dai', amount = '100', balanceC
       httpsAgent: new SocksProxyAgent('socks5h://127.0.0.1:' + torPort),
       headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; rv:91.0) Gecko/20100101 Firefox/91.0' }
     };
-  } else if (torPort && rpc.includes('http')) {
+  } else if (torPort && rpc.startsWith('http')) {
     console.log('Using tor network');
     web3Options = { agent: { http: new SocksProxyAgent('socks5h://127.0.0.1:' + torPort) }, timeout: 60000 };
     // Use forked web3-providers-http from local file to modify user-agent header value which improves privacy.
@@ -1395,7 +1395,7 @@ async function init({ rpc, noteNetId, currency = 'dai', amount = '100', balanceC
   } else if (rpc.includes('ipc')) {
     console.log('Using ipc connection');
     web3 = new Web3(new Web3.providers.IpcProvider(rpc, net), null, { transactionConfirmationBlocks: 1 });
-  } else if (rpc.includes('ws') || rpc.includes('wss')) {
+  } else if (rpc.startsWith('ws') || rpc.startsWith('wss')) {
     console.log('Using websocket connection (Note: Tor is not supported for Websocket providers)');
     web3Options = {
       clientConfig: { keepalive: true, keepaliveInterval: -1 },
