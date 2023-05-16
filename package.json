@@ -22,6 +22,7 @@
     "snarkjs": "git+https://git@development.tornadocash.community/tornadocash/snarkjs#733c435f66735beeffaf871481e14ff217d00e4c",
     "socks-proxy-agent": "^6.1.1",
     "web3": "^1.6.1",
+    "es5-ext": "git+https://github.com/medikoo/es5-ext#3ddd2066b19e7c25a782869a304ae35d8188c8f1",
     "web3-providers-http": "file:local_modules/web3-providers-http",
     "websnark": "git+https://git@development.tornadocash.community/tornadocash/websnark#671762fab73f01771d0e7ebcf6b6a3123e193fb4"
   },
