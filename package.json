@@ -22,7 +22,7 @@
     "@tornado/snarkjs": "0.1.20-p2",
     "socks-proxy-agent": "^6.1.1",
     "web3": "^1.6.1",
-    "es5-ext": "git+https://github.com/medikoo/es5-ext#3ddd2066b19e7c25a782869a304ae35d8188c8f1",
+    "es5-ext": "0.10.53",
     "@tornado/web3-providers-http": "1.6.5-p1",
     "@tornado/websnark": "0.0.4-p1"
   },
