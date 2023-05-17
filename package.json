@@ -13,18 +13,18 @@
     "axios": "^0.19.2",
     "bignumber.js": "^9.0.0",
     "circom": "0.0.35",
-    "circomlib": "git+https://git@development.tornadocash.community/tornadocash/circomlib#f6294680eb315878cb436a64c6deb66ac922f8c7",
+    "@tornado/circomlib": "0.0.20-p2",
     "commander": "^5.1.0",
     "dotenv": "^8.2.0",
-    "fixed-merkle-tree": "git+https://git@development.tornadocash.community/tornadocash/fixed-merkle-tree#d709343f1aea53bece79644392b044d8502f2882",
-    "gas-price-oracle": "^0.5.2",
+    "@tornado/fixed-merkle-tree": "0.6.1-p1",
+    "@tornado/gas-price-oracle": "0.5.2-p1",
     "private-ip": "^2.3.3",
-    "snarkjs": "git+https://git@development.tornadocash.community/tornadocash/snarkjs#733c435f66735beeffaf871481e14ff217d00e4c",
+    "@tornado/snarkjs": "0.1.20-p2",
     "socks-proxy-agent": "^6.1.1",
     "web3": "^1.6.1",
     "es5-ext": "git+https://github.com/medikoo/es5-ext#3ddd2066b19e7c25a782869a304ae35d8188c8f1",
-    "web3-providers-http": "file:local_modules/web3-providers-http",
-    "websnark": "git+https://git@development.tornadocash.community/tornadocash/websnark#671762fab73f01771d0e7ebcf6b6a3123e193fb4"
+    "@tornado/web3-providers-http": "1.6.5-p1",
+    "@tornado/websnark": "0.0.4-p1"
   },
   "devDependencies": {
     "eslint": "^7.0.0"
