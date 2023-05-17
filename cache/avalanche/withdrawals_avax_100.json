@@ -14369,5 +14369,9 @@
     "nullifierHash": "0x1216c3a8b6705864a096f6452ec2c1e05b180e50c22f1537c8773b98fbfff49d",
     "to": "0xD8be3C06FE1FBA4e3306Daa1fd2A4f86a577873B",
     "fee": "0"
+  },
+  {
+    "blockNumber": 30126140,
+    "transactionHash": null
   }
 ]

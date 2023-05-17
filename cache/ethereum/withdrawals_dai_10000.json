@@ -20034,7 +20034,14 @@
     "fee": "98503077413129652598"
   },
   {
-    "blockNumber": 17274165,
+    "blockNumber": 17274212,
+    "transactionHash": "0x71fce06ae4f247f18484d436bece43ebe6b2bf36fee3692187adcf547de1b61f",
+    "nullifierHash": "0x2e16aac1088d4a0df341bd3255a31f40b4bdd06a9d411db91b82e329c35dbc77",
+    "to": "0x38fD288c6a65F6D6771e1D64a0CBB2FeD9eB8118",
+    "fee": "117378382600688883652"
+  },
+  {
+    "blockNumber": 17274749,
     "transactionHash": null
   }
 ]
