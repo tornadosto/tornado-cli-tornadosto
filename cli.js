@@ -1627,7 +1627,10 @@ async function main() {
       const { currency, amount, netId, deposit } = parseNote(noteString);
 
       await init({ rpc: program.rpc, noteNetId: netId, currency, amount });
+
       const depositInfo = await loadDepositData({ amount, currency, deposit });
+      const withdrawInfo = await loadWithdrawalData({ amount, currency, deposit });
+
       const depositDate = new Date(depositInfo.timestamp * 1000);
       console.log('\n=============Deposit=================');
       console.log('Deposit     :', amount, currency.toUpperCase());
@@ -1641,7 +1644,7 @@ async function main() {
         return;
       }
       console.log('=====================================', '\n');
-      const withdrawInfo = await loadWithdrawalData({ amount, currency, deposit });
+
       const withdrawalDate = new Date(withdrawInfo.timestamp * 1000);
       console.log('\n=============Withdrawal==============');
       console.log('Withdrawal  :', withdrawInfo.amount, currency);
