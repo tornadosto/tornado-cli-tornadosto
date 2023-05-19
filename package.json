@@ -10,21 +10,21 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@tornado/circomlib": "0.0.20-p2",
+    "@tornado/fixed-merkle-tree": "0.6.1-p1",
+    "@tornado/gas-price-oracle": "0.5.2-p1",
+    "@tornado/snarkjs": "0.1.20-p2",
+    "@tornado/web3-providers-http": "1.6.5-p1",
+    "@tornado/websnark": "0.0.4-p1",
     "axios": "^0.19.2",
     "bignumber.js": "^9.0.0",
     "circom": "0.0.35",
-    "@tornado/circomlib": "0.0.20-p2",
     "commander": "^5.1.0",
-    "dotenv": "^8.2.0",
-    "@tornado/fixed-merkle-tree": "0.6.1-p1",
-    "@tornado/gas-price-oracle": "0.5.2-p1",
-    "private-ip": "^2.3.3",
-    "@tornado/snarkjs": "0.1.20-p2",
-    "socks-proxy-agent": "^6.1.1",
-    "web3": "^1.6.1",
+    "dotenv": "^8.6.0",
     "es5-ext": "0.10.53",
-    "@tornado/web3-providers-http": "1.6.5-p1",
-    "@tornado/websnark": "0.0.4-p1"
+    "private-ip": "^2.3.3",
+    "socks-proxy-agent": "^6.1.1",
+    "web3": "^1.6.1"
   },
   "devDependencies": {
     "eslint": "^7.0.0"
