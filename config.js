@@ -269,7 +269,7 @@ module.exports = {
       proxy: '0x0D5550d52428E7e3175bfc9550207e4ad3859b17',
       multicall: '0xb5b692a88BDFc81ca69dcB1d924f59f0413A602a',
       subgraph: 'https://api.thegraph.com/subgraphs/name/tornadocash/xdai-tornado-subgraph',
-      defaultRpc: 'https://rpc.gnosis.gateway.fm'
+      defaultRpc: 'https://gnosis-mainnet.chainnodes.org/d692ae63-0a7e-43e0-9da9-fe4f4cc6c607'
     },
     netId137: {
       tokens: {
