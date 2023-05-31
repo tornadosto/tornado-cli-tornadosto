@@ -665,7 +665,14 @@
     "timestamp": "1681283208"
   },
   {
-    "blockNumber": 9012119,
+    "blockNumber": 9022379,
+    "transactionHash": "0xc3b29c37285595c639ba41a99902de4ba0a96e9b3c9eb1567db6cec4cfc3a1b7",
+    "commitment": "0x231a7eeb23566a0da5631291adb3829edfcee8063da4e046f8be79603edda7e1",
+    "leafIndex": 95,
+    "timestamp": "1684426464"
+  },
+  {
+    "blockNumber": 9096884,
     "transactionHash": null
   }
 ]

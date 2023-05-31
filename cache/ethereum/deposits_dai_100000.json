@@ -24584,7 +24584,14 @@
     "timestamp": "1684192187"
   },
   {
-    "blockNumber": 17274750,
+    "blockNumber": 17292447,
+    "transactionHash": "0x70dfc6bdb304df4d5f3977258347ea5b56705ae4e1b60b6dcca93fc1499f5a70",
+    "commitment": "0x10ff26424f944bb683b092813ce702726b78ab456a697d0dc159871fcb17809c",
+    "leafIndex": 3512,
+    "timestamp": "1684486067"
+  },
+  {
+    "blockNumber": 17378645,
     "transactionHash": null
   }
 ]
