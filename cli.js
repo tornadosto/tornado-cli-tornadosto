@@ -1417,11 +1417,11 @@ async function init({ rpc, noteNetId, currency = 'dai', amount = '100', balanceC
 
   if (!isIpPrivate && !rpc.includes('localhost') && !privateRpc) {
     try {
-      const fetchRemoteIP = await axios.get('https://ip.tornado.cash', ipOptions);
-      const { country, ip } = fetchRemoteIP.data;
-      console.log('Your remote IP address is', ip, 'from', country + '.');
+      const htmlIPInfo = await axios.get("https://check.torproject.org", ipOptions);
+      const ip = htmlIPInfo.data.split("Your IP address appears to be:  <strong>").pop().split("</")[0];
+      console.log('Your remote IP address is', ip);
     } catch (error) {
-      console.error('Could not fetch remote IP from ip.tornado.cash, use VPN if the problem repeats.');
+      console.error('Could not fetch remote IP from check.torproject.org, use VPN if the problem repeats.');
     }
   } else if (isIpPrivate || rpc.includes('localhost')) {
     console.log('Local RPC detected');
