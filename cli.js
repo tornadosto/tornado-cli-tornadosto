@@ -1324,6 +1324,8 @@ async function loadWithdrawalData({ amount, currency, deposit }) {
       return event.nullifierHash === deposit.nullifierHex;
     })[0];
 
+    if (!withdrawEvent) return null;
+
     const fee = withdrawEvent.fee;
     const decimals = config.deployments[`netId${netId}`]['tokens'][currency].decimals;
     const withdrawalAmount = toBN(fromDecimals({ amount, decimals })).sub(toBN(fee));
@@ -1417,8 +1419,8 @@ async function init({ rpc, noteNetId, currency = 'dai', amount = '100', balanceC
 
   if (!isIpPrivate && !rpc.includes('localhost') && !privateRpc) {
     try {
-      const htmlIPInfo = await axios.get("https://check.torproject.org", ipOptions);
-      const ip = htmlIPInfo.data.split("Your IP address appears to be:  <strong>").pop().split("</")[0];
+      const htmlIPInfo = await axios.get('https://check.torproject.org', ipOptions);
+      const ip = htmlIPInfo.data.split('Your IP address appears to be:  <strong>').pop().split('</')[0];
       console.log('Your remote IP address is', ip);
     } catch (error) {
       console.error('Could not fetch remote IP from check.torproject.org, use VPN if the problem repeats.');
@@ -1639,11 +1641,12 @@ async function main() {
       console.log('Transaction :', `https://${getExplorerLink()}/tx/${depositInfo.txHash}`);
       console.log('Commitment  :', depositInfo.commitment);
       console.log('Spent       :', depositInfo.isSpent);
+      console.log('=====================================', '\n');
+
       if (!depositInfo.isSpent) {
-        console.log('The note was not spent');
+        console.log('The note was not spent!');
         return;
       }
-      console.log('=====================================', '\n');
 
       const withdrawalDate = new Date(withdrawInfo.timestamp * 1000);
       console.log('\n=============Withdrawal==============');
