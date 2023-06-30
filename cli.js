@@ -28,6 +28,7 @@ const gasSpeedPreferences = ['instant', 'fast', 'standard', 'low'];
 let web3,
   torPort,
   tornado,
+  tornadoProxyAddress,
   tornadoContract,
   tornadoInstance,
   circuit,
@@ -115,7 +116,7 @@ async function printERC20Balance({ address, name, tokenAddress }) {
  * @param {Array} depositEvents Array of deposit event objects
  * @returns {Object} treeData
  * @returns {String[]} treeData.leaves Commitment hashes converted to decimals
- * @returns {@link MerkleTree} treeData.tree Builded merkle tree
+ * @returns {MerkleTree} treeData.tree Builded merkle tree
  * @returns {String} treeData.root Merkle tree root
  */
 function computeDepositEventsTree(depositEvents) {
@@ -155,28 +156,39 @@ async function submitTransaction(signedTX) {
     });
 }
 
+/**
+ * Estimate gas for created transaction
+ * @typedef {string} EthAddress Wallet (account) address
+ * @param {EthAddress} from Transaction sender
+ * @param {EthAddress} to Transaction recipient
+ * @param {Number} nonce Account nonce (transactions count on sender account)
+ * @param {string} encodedData Encoded ABI of transaction
+ * @param {Number} value Amount of funds to send in this transaction
+ * @returns {Promise<Number>} current acceptable gas limit to send this transaction
+ */
+async function estimateGas(from, to, nonce, encodedData, value = 0) {
+  const fetchedGas = await web3.eth.estimateGas({
+    from,
+    to,
+    value,
+    nonce,
+    data: encodedData
+  });
+  const bumped = Math.floor(fetchedGas * 1.3);
+  return bumped;
+}
+
 async function generateTransaction(to, encodedData, value = 0) {
   const nonce = await web3.eth.getTransactionCount(senderAccount);
   let gasPrice = await fetchGasPrice();
   let gasLimit;
 
-  async function estimateGas() {
-    const fetchedGas = await web3.eth.estimateGas({
-      from: senderAccount,
-      to: to,
-      value: value,
-      nonce: nonce,
-      data: encodedData
-    });
-    const bumped = Math.floor(fetchedGas * 1.3);
-    return web3.utils.toHex(bumped);
-  }
-
   if (encodedData) {
-    gasLimit = await estimateGas();
+    gasLimit = await estimateGas(senderAccount, to, nonce, encodedData, value);
   } else {
-    gasLimit = web3.utils.toHex(23000);
+    gasLimit = 23000;
   }
+  gasLimit = web3.utils.toHex(gasLimit);
 
   const isNumRString = typeof value == 'string' || typeof value == 'number';
   const valueCost = isNumRString ? toBN(value) : value;
@@ -334,7 +346,7 @@ async function deposit({ currency, amount, commitmentNote }) {
     await printETHBalance({ address: senderAccount, name: 'Sender account' });
     const value = isTestRPC ? ETH_AMOUNT : fromDecimals({ amount, decimals: 18 });
     console.log('Submitting deposit transaction');
-    await generateTransaction(contractAddress, tornado.methods.deposit(tornadoInstance, commitment, []).encodeABI(), value);
+    await generateTransaction(tornadoProxyAddress, tornado.methods.deposit(tornadoInstance, commitment, []).encodeABI(), value);
     await printETHBalance({ address: tornadoContract._address, name: 'Tornado contract' });
     await printETHBalance({ address: senderAccount, name: 'Sender account' });
   } else {
@@ -356,7 +368,7 @@ async function deposit({ currency, amount, commitmentNote }) {
     }
 
     console.log('Submitting deposit transaction');
-    await generateTransaction(contractAddress, tornado.methods.deposit(tornadoInstance, commitment, []).encodeABI());
+    await generateTransaction(tornadoProxyAddress, tornado.methods.deposit(tornadoInstance, commitment, []).encodeABI());
     await printERC20Balance({ address: tornadoContract._address, name: 'Tornado contract' });
     await printERC20Balance({ address: senderAccount, name: 'Sender account' });
   }
@@ -367,10 +379,20 @@ async function deposit({ currency, amount, commitmentNote }) {
 }
 
 /**
+ * @typedef {Object} MerkleProof Use pregenerated merkle proof
+ * @property {string} root Merkle tree root
+ * @property {Array<number|string>} pathElements Number of hashes and hashes
+ * @property {Array<number>} pathIndices Indicies
+ */
+
+/**
  * Generate merkle tree for a deposit.
  * Download deposit events from the tornado, reconstructs merkle tree, finds our deposit leaf
  * in it and generates merkle proof
- * @param deposit Deposit object
+ * @param {Object} deposit Deposit object
+ * @param {string} currency Currency ticker, like 'ETH' or 'BNB'
+ * @param {number} amount Tornado instance amount, like 0.1 (ETH or BNB) or 10
+ * @return {MerkleProof} Calculated valid merkle tree (proof)
  */
 async function generateMerkleProof(deposit, currency, amount) {
   // Get all deposit events from smart contract and assemble merkle tree from them
@@ -401,16 +423,26 @@ async function generateMerkleProof(deposit, currency, amount) {
 }
 
 /**
- * Generate SNARK proof for withdrawal
- * @param deposit Deposit object
- * @param recipient Funds recipient
- * @param relayer Relayer address
- * @param fee Relayer fee
- * @param refund Receive ether for exchanged tokens
+ * @typedef {Object} ProofData
+ * @property {string} proof - ZK-SNARK proof
+ * @property {Array<string>} args - Withdrawal transaction proofed arguments
  */
-async function generateProof({ deposit, currency, amount, recipient, relayerAddress = 0, fee = 0, refund = 0 }) {
+
+/**
+ * Generate SNARK proof for withdrawal
+ * @param {Object} args Arguments
+ * @param {Object} args.deposit Deposit object
+ * @param {string} args.recipient Funds recipient
+ * @param {string | 0 } args.relayer Relayer address
+ * @param {number} args.fee Relayer fee
+ * @param {number} args.refund Receive ether for exchanged tokens
+ * @param {MerkleProof} [args.merkleProof] Valid merkle tree proof
+ * @returns {Promise<ProofData>} Proof data
+ */
+async function generateProof({ deposit, currency, amount, recipient, relayerAddress = 0, fee = 0, refund = 0, merkleProof }) {
   // Compute merkle proof of our commitment
-  const { root, pathElements, pathIndices } = await generateMerkleProof(deposit, currency, amount);
+  if (merkleProof === undefined) merkleProof = await generateMerkleProof(deposit, currency, amount);
+  const { root, pathElements, pathIndices } = merkleProof;
 
   // Prepare circuit input
   const input = {
@@ -484,38 +516,47 @@ async function withdraw({ deposit, currency, amount, recipient, relayerURL, refu
     const gasPrice = await fetchGasPrice();
 
     const decimals = isTestRPC ? 18 : config.deployments[`netId${netId}`]['tokens'][currency].decimals;
-    const fee = calculateFee({
-      currency,
-      gasPrice,
-      amount,
-      refund,
-      ethPrices,
-      relayerServiceFee: tornadoServiceFee,
-      decimals
-    });
-    if (fee.gt(fromDecimals({ amount, decimals }))) {
-      throw new Error('Too high refund');
+
+    const merkleWithdrawalProof = await generateMerkleProof(deposit, currency, amount);
+
+    async function calculateDataForRelayer(gasLimit) {
+      const { desiredFee: totalFee, feePercent: relayerFee } = calculateRelayerWithdrawFee({
+        currency,
+        gasPrice,
+        amount,
+        refund,
+        ethPrices,
+        relayerServiceFee: tornadoServiceFee,
+        decimals,
+        gasLimit
+      });
+
+      const { proof, args } = await generateProof({
+        deposit,
+        currency,
+        amount,
+        recipient,
+        relayerAddress: rewardAccount,
+        fee: totalFee,
+        refund,
+        merkleProof: merkleWithdrawalProof
+      });
+
+      return { proof, args, totalFee, relayerFee };
     }
 
-    const { proof, args } = await generateProof({
-      deposit,
-      currency,
-      amount,
-      recipient,
-      relayerAddress: rewardAccount,
-      fee,
-      refund
-    });
+    const { proof: dummyProof, args: dummyArgs } = await calculateDataForRelayer();
+    const realGasLimit = await estimateWithdrawGasLimit({ relayer: rewardAccount, proof: dummyProof, callArgs: dummyArgs });
+    const { proof, args, totalFee, relayerFee } = await calculateDataForRelayer(realGasLimit);
 
     console.log('Sending withdraw transaction through relay');
 
-    const gasCosts = toBN(gasPrice).mul(toBN(340000));
-    const totalCosts = fee.add(gasCosts);
+    const gasCosts = toBN(gasPrice).mul(toBN(realGasLimit));
 
     /** Relayer fee details **/
     console.log('Transaction fee: ', rmDecimalBN(fromWei(gasCosts), 12), `${netSymbol}`);
-    console.log('Relayer fee: ', rmDecimalBN(fromWei(fee), 12), `${netSymbol}`);
-    console.log('Total fees: ', rmDecimalBN(fromWei(totalCosts), 12), `${netSymbol}`);
+    console.log('Relayer fee: ', rmDecimalBN(fromWei(relayerFee), 12), `${netSymbol}`);
+    console.log('Total fees: ', rmDecimalBN(fromWei(totalFee), 12), `${netSymbol}`);
     /** -------------------- **/
 
     if (shouldPromptConfirmation) {
@@ -558,7 +599,7 @@ async function withdraw({ deposit, currency, amount, recipient, relayerURL, refu
     const { proof, args } = await generateProof({ deposit, currency, amount, recipient, refund });
 
     console.log('Submitting withdraw transaction');
-    await generateTransaction(contractAddress, tornado.methods.withdraw(tornadoInstance, proof, ...args).encodeABI());
+    await generateTransaction(tornadoProxyAddress, tornado.methods.withdraw(tornadoInstance, proof, ...args).encodeABI());
   }
   if (currency === netSymbol.toLowerCase()) {
     await printETHBalance({ address: recipient, name: 'Recipient' });
@@ -860,13 +901,48 @@ async function fetchGasPrice() {
   }
 }
 
-function calculateFee({ currency, gasPrice, amount, refund, ethPrices, relayerServiceFee, decimals }) {
+/**
+ * Get default gas limit depending on chain ID
+ * Available chain ID's on Tornado
+ * @typedef {1 | 5 | 10 | 56 | 100 | 137 | 42161 | 43114 } NetID
+ * @param {NetID}} netId
+ * @returns {Number} acceptable withdraw gas limit for selected chain
+ */
+function getHardcodedWithdrawGasLimit(netId) {
+  switch (netId) {
+    case 10:
+      return 440000;
+    case 42161:
+      return 1900000;
+    default:
+      return 390000;
+  }
+}
+
+/**
+ * Estimate gas limit for withdraw transaction via relayer with pregenerated proof
+ * @typedef {string} EthAddress Wallet (account) address
+ * @param {object} args Function arguments
+ * @param {EthAddress} args.relayer Relayer address
+ * @param {string} args.proof Calculated SNARK proof for withdrawal
+ * @param {Array<string>} args.callArgs Arguments to call 'withdraw' function from Tornado Proxy contract
+ * @returns {Promise<Number>} Acceptable gas limit to send withdraw transaction via relayer for selected chain
+ */
+async function estimateWithdrawGasLimit({ relayer, proof, callArgs }) {
+  const tx = tornado.methods.withdraw(tornadoInstance, proof, ...callArgs).encodeABI();
+  const nonce = await web3.eth.getTransactionCount(relayer);
+  const gasLimit = await estimateGas(relayer, tornadoProxyAddress, nonce, tx, callArgs[5]);
+
+  return gasLimit;
+}
+
+function calculateRelayerWithdrawFee({ currency, gasPrice, amount, refund, ethPrices, relayerServiceFee, decimals, gasLimit }) {
   const decimalsPoint =
     Math.floor(relayerServiceFee) === Number(relayerServiceFee) ? 0 : relayerServiceFee.toString().split('.')[1].length;
   const roundDecimal = 10 ** decimalsPoint;
   const total = toBN(fromDecimals({ amount, decimals }));
   const feePercent = total.mul(toBN(relayerServiceFee * roundDecimal)).div(toBN(roundDecimal * 100));
-  const expense = toBN(gasPrice).mul(toBN(5e5));
+  const expense = toBN(gasPrice).mul(toBN(gasLimit || getHardcodedWithdrawGasLimit(netId)));
   let desiredFee;
   switch (currency) {
     case netSymbol.toLowerCase(): {
@@ -882,7 +958,7 @@ function calculateFee({ currency, gasPrice, amount, refund, ethPrices, relayerSe
       break;
     }
   }
-  return desiredFee;
+  return { desiredFee, feePercent };
 }
 
 /**
@@ -1117,7 +1193,8 @@ async function fetchEvents({ type, currency, amount, filterEvents }) {
           return Number(result);
         }
       } catch (error) {
-        console.error('Failed to fetch latest event from thegraph');
+        console.log(error);
+        console.error('Failed to fetch latest event from subgraph');
       }
     }
 
@@ -1189,7 +1266,7 @@ async function fetchEvents({ type, currency, amount, filterEvents }) {
     }
 
     async function fetchGraphEvents() {
-      console.log('Querying latest events from TheGraph');
+      console.log('Querying latest events from subgraph');
       const latestTimestamp = await queryLatestTimestamp();
       if (latestTimestamp) {
         const getCachedBlock = await web3.eth.getBlock(startBlock);
@@ -1222,7 +1299,7 @@ async function fetchEvents({ type, currency, amount, filterEvents }) {
     }
     await fetchGraphEvents();
   }
-  if (!privateRpc && !subgraph && !isTestRPC) {
+  if (!privateRpc && subgraph && !isTestRPC) {
     await syncGraphEvents();
   } else {
     await syncEvents();
@@ -1376,7 +1453,7 @@ async function promptConfirmation() {
  * Init web3, contracts, and snark
  */
 async function init({ rpc, noteNetId, currency = 'dai', amount = '100', balanceCheck, localMode, privateKey }) {
-  let contractJson, instanceJson, erc20ContractJson, erc20tornadoJson, tornadoAddress, tokenAddress;
+  let contractJson, instanceJson, erc20ContractJson, erc20tornadoJson, tokenAddress;
   let ipOptions = {};
 
   if (noteNetId && !rpc) rpc = config.deployments[`netId${noteNetId}`].defaultRpc;
@@ -1473,7 +1550,7 @@ async function init({ rpc, noteNetId, currency = 'dai', amount = '100', balanceC
   }
 
   if (isTestRPC) {
-    tornadoAddress =
+    tornadoProxyAddress =
       currency === netSymbol.toLowerCase() ? contractJson.networks[netId].address : erc20tornadoJson.networks[netId].address;
     tokenAddress = currency !== netSymbol.toLowerCase() ? erc20ContractJson.networks[netId].address : null;
     deployedBlockNumber = 0;
@@ -1484,13 +1561,13 @@ async function init({ rpc, noteNetId, currency = 'dai', amount = '100', balanceC
         currency = netSymbol.toLowerCase();
         amount = Object.keys(config.deployments[`netId${netId}`][currency].instanceAddress)[0];
       }
-      tornadoAddress = config.deployments[`netId${netId}`].proxy;
+      tornadoProxyAddress = config.deployments[`netId${netId}`].proxy;
       multiCall = config.deployments[`netId${netId}`].multicall;
       subgraph = config.deployments[`netId${netId}`].subgraph;
       tornadoInstance = config.deployments[`netId${netId}`]['tokens'][currency].instanceAddress[amount];
       deployedBlockNumber = config.deployments[`netId${netId}`]['tokens'][currency].deployedBlockNumber[amount];
 
-      if (!tornadoAddress) {
+      if (!tornadoProxyAddress) {
         throw new Error();
       }
       tokenAddress =
@@ -1500,9 +1577,8 @@ async function init({ rpc, noteNetId, currency = 'dai', amount = '100', balanceC
       process.exit(1);
     }
   }
-  tornado = new web3.eth.Contract(contractJson, tornadoAddress);
+  tornado = new web3.eth.Contract(contractJson, tornadoProxyAddress);
   tornadoContract = new web3.eth.Contract(instanceJson, tornadoInstance);
-  contractAddress = tornadoAddress;
   erc20 = currency !== netSymbol.toLowerCase() ? new web3.eth.Contract(erc20ContractJson.abi, tokenAddress) : {};
   erc20Address = tokenAddress;
 }
