@@ -11,6 +11,7 @@ const bigInt = snarkjs.bigInt;
 const merkleTree = require('@tornado/fixed-merkle-tree');
 const Web3 = require('web3');
 const Web3HttpProvider = require('@tornado/web3-providers-http');
+const { serialize } = require('@ethersproject/transactions');
 const buildGroth16 = require('@tornado/websnark/src/groth16');
 const websnarkUtils = require('@tornado/websnark/src/utils');
 const { toWei, fromWei, toBN, BN } = require('web3-utils');
@@ -32,7 +33,7 @@ let web3,
   tornadoContract,
   tornadoInstance,
   circuit,
-  proving_key,
+  provingKey,
   groth16,
   erc20,
   senderAccount,
@@ -40,13 +41,13 @@ let web3,
   netName,
   netSymbol,
   multiCall,
+  userAction,
   subgraph;
 let MERKLE_TREE_HEIGHT, ETH_AMOUNT, TOKEN_AMOUNT, PRIVATE_KEY;
 
 /** Command state parameters */
 let preferenceSpeed = gasSpeedPreferences[0];
-let isTestRPC,
-  eipGasSupport = false;
+let isTestRPC = false;
 let shouldPromptConfirmation = true;
 let doNotSubmitTx, privateRpc;
 /** ----------------------------------------- **/
@@ -178,9 +179,43 @@ async function estimateGas(from, to, nonce, encodedData, value = 0) {
   return bumped;
 }
 
+async function fetchL1Fee({ gasPrice, gasLimit }) {
+  const DUMMY_NONCE = '0x1111111111111111111111111111111111111111111111111111111111111111';
+
+  const DUMMY_WITHDRAW_DATA =
+    '0x0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111';
+
+  if (netId === 10) {
+    const ovmGasPriceOracleContractAddress = '0x420000000000000000000000000000000000000F';
+    const optimismL1GasPriceOracleABI = require('./build/contracts/OptimismL1GasPriceOracle.json');
+    const oracleInstance = new web3.eth.Contract(optimismL1GasPriceOracleABI, ovmGasPriceOracleContractAddress);
+
+    try {
+      const tx = serialize({
+        type: 0,
+        gasLimit,
+        chainId: netId,
+        nonce: DUMMY_NONCE,
+        data: DUMMY_WITHDRAW_DATA,
+        gasPrice,
+        to: tornadoProxyAddress
+      });
+
+      const l1Fee = await oracleInstance.methods.getL1Fee(tx).call();
+
+      return l1Fee;
+    } catch (err) {
+      throw new Error('Error while fetching optimism L1 fee: ' + err.message);
+    }
+  }
+
+  return 0;
+}
+
 async function generateTransaction(to, encodedData, value = 0) {
   const nonce = await web3.eth.getTransactionCount(senderAccount);
   let gasPrice = await fetchGasPrice();
+
   let gasLimit;
 
   if (encodedData) {
@@ -192,12 +227,16 @@ async function generateTransaction(to, encodedData, value = 0) {
 
   const isNumRString = typeof value == 'string' || typeof value == 'number';
   const valueCost = isNumRString ? toBN(value) : value;
-  const gasCosts = toBN(gasPrice).mul(toBN(gasLimit));
+
+  const additionalFees = userAction === 'withdrawal' ? await fetchL1Fee({ gasPrice, gasLimit }) : 0;
+  const gasCosts = toBN(gasPrice).mul(toBN(gasLimit)).add(toBN(additionalFees));
   const totalCosts = valueCost.add(gasCosts);
 
   /** Transaction details */
   console.log('Gas price: ', web3.utils.hexToNumber(gasPrice));
   console.log('Gas limit: ', web3.utils.hexToNumber(gasLimit));
+  if (additionalFees != 0)
+    console.log('Additional gas fees (like L1 data fee): ', rmDecimalBN(fromWei(additionalFees), 12), `${netSymbol}`);
   console.log('Transaction fee: ', rmDecimalBN(fromWei(gasCosts), 12), `${netSymbol}`);
   console.log('Transaction cost: ', rmDecimalBN(fromWei(totalCosts), 12), `${netSymbol}`);
   /** ----------------------------------------- **/
@@ -463,7 +502,7 @@ async function generateProof({ deposit, currency, amount, recipient, relayerAddr
 
   console.log('Generating SNARK proof');
   console.time('Proof time');
-  const proofData = await websnarkUtils.genWitnessAndProve(groth16, input, circuit, proving_key);
+  const proofData = await websnarkUtils.genWitnessAndProve(groth16, input, circuit, provingKey);
   const { proof } = websnarkUtils.toSolidityInput(proofData);
   console.timeEnd('Proof time');
 
@@ -520,7 +559,7 @@ async function withdraw({ deposit, currency, amount, recipient, relayerURL, refu
     const merkleWithdrawalProof = await generateMerkleProof(deposit, currency, amount);
 
     async function calculateDataForRelayer(gasLimit) {
-      const { desiredFee: totalFee, feePercent: relayerFee } = calculateRelayerWithdrawFee({
+      const { desiredFee: totalFee, feePercent: relayerFee } = await calculateRelayerWithdrawFee({
         currency,
         gasPrice,
         amount,
@@ -550,8 +589,9 @@ async function withdraw({ deposit, currency, amount, recipient, relayerURL, refu
     const { proof, args, totalFee, relayerFee } = await calculateDataForRelayer(realGasLimit);
 
     console.log('Sending withdraw transaction through relay');
-
-    const gasCosts = toBN(gasPrice).mul(toBN(realGasLimit));
+    const l1Fee = await fetchL1Fee({ gasPrice, gasLimit: realGasLimit });
+    console.log(l1Fee);
+    const gasCosts = toBN(gasPrice).mul(toBN(realGasLimit)).add(toBN(l1Fee));
 
     /** Relayer fee details **/
     console.log('Transaction fee: ', rmDecimalBN(fromWei(gasCosts), 12), `${netSymbol}`);
@@ -864,37 +904,31 @@ function getCurrentNetworkSymbol() {
   }
 }
 
-function gasPricesETH(value = 80) {
-  const tenPercent = (Number(value) * 5) / 100;
-  const max = Math.max(tenPercent, 3);
-  const bumped = Math.floor(Number(value) + max);
-  return toHex(toWei(bumped.toString(), 'gwei'));
-}
-
-function gasPrices(value = 5) {
-  return toHex(toWei(value.toString(), 'gwei'));
-}
-
 async function fetchGasPrice() {
   try {
     /** Gas preferences **/
     console.log('Gas speed preference: ', preferenceSpeed);
     /** ----------------------------------------------- **/
 
-    try {
-      const isLegacy = !eipGasSupport;
-      const oracleOptions = { chainId: netId, defaultRpc: web3.currentProvider.host };
-      const oracle = new GasPriceOracle(oracleOptions);
-      const gas = await oracle.gasPrices({ isLegacy });
+    // Extra bump estimated gas price for Polygon and Goerli
+    const bumpPercent = netId === 137 || netId === 5 ? 30 : 10;
 
-      if (netId === 1) {
-        return gasPricesETH(gas[preferenceSpeed]);
-      } else {
-        return gasPrices(gas[preferenceSpeed]);
-      }
+    try {
+      const oracleOptions = {
+        chainId: netId,
+        defaultRpc: web3.currentProvider.host,
+        minPriority: netId === 1 ? 3 : 0.05,
+        percentile: 5,
+        blocksCount: 20
+      };
+      const oracle = new GasPriceOracle(oracleOptions);
+      const { maxFeePerGas, gasPrice } = await oracle.getTxGasParams({ legacySpeed: preferenceSpeed, bumpPercent });
+
+      return maxFeePerGas || gasPrice;
     } catch (e) {
-      const wei = await web3.eth.getGasPrice();
-      return wei / web3.utils.unitMap.gwei;
+      const wei = toBN(await web3.eth.getGasPrice());
+      const bumped = wei.add(wei.mul(toBN(bumpPercent)).div(toBN(100)));
+      return toHex(bumped);
     }
   } catch (err) {
     throw new Error(`Method fetchGasPrice has error ${err.message}`);
@@ -936,13 +970,26 @@ async function estimateWithdrawGasLimit({ relayer, proof, callArgs }) {
   return gasLimit;
 }
 
-function calculateRelayerWithdrawFee({ currency, gasPrice, amount, refund, ethPrices, relayerServiceFee, decimals, gasLimit }) {
+async function calculateRelayerWithdrawFee({
+  currency,
+  gasPrice,
+  amount,
+  refund,
+  ethPrices,
+  relayerServiceFee,
+  decimals,
+  gasLimit
+}) {
   const decimalsPoint =
     Math.floor(relayerServiceFee) === Number(relayerServiceFee) ? 0 : relayerServiceFee.toString().split('.')[1].length;
   const roundDecimal = 10 ** decimalsPoint;
   const total = toBN(fromDecimals({ amount, decimals }));
   const feePercent = total.mul(toBN(relayerServiceFee * roundDecimal)).div(toBN(roundDecimal * 100));
-  const expense = toBN(gasPrice).mul(toBN(gasLimit || getHardcodedWithdrawGasLimit(netId)));
+  const l1Fee = await fetchL1Fee({ gasPrice, gasLimit });
+  const expense = toBN(gasPrice)
+    .mul(toBN(gasLimit || getHardcodedWithdrawGasLimit(netId)))
+    .add(toBN(l1Fee));
+
   let desiredFee;
   switch (currency) {
     case netSymbol.toLowerCase(): {
@@ -1010,7 +1057,7 @@ function filterZeroEvents(events) {
 
 function loadCachedEvents({ type, currency, amount }) {
   try {
-    const module = require(`./cache/${netName.toLowerCase()}/${type}s_${currency}_${amount}.json`);
+    const module = require(`./cache/${netName.toLowerCase()}/${type}s_${currency.toLowerCase()}_${amount}.json`);
 
     if (module) {
       const events = module;
@@ -1042,11 +1089,13 @@ async function fetchEvents({ type, currency, amount, filterEvents }) {
   console.log('Fetching', amount, currency.toUpperCase(), type, 'events for', netName, 'network');
 
   async function updateCache(fetchedEvents) {
+    if (type === 'deposit') fetchedEvents.sort((firstLeaf, secondLeaf) => firstLeaf.leafIndex - secondLeaf.leafIndex);
+
     try {
-      const fileName = `./cache/${netName.toLowerCase()}/${type}s_${currency}_${amount}.json`;
+      const fileName = `./cache/${netName.toLowerCase()}/${type}s_${currency.toLowerCase()}_${amount}.json`;
       const localEvents = await initJson(fileName);
       const events = filterZeroEvents(localEvents).concat(fetchedEvents);
-      await fs.writeFileSync(fileName, JSON.stringify(events, null, 2), 'utf8');
+      fs.writeFileSync(fileName, JSON.stringify(events, null, 2), 'utf8');
     } catch (error) {
       throw new Error('Writing cache file failed:', error);
     }
@@ -1056,7 +1105,7 @@ async function fetchEvents({ type, currency, amount, filterEvents }) {
    * Adds an zero (empty) event to the end of the events list
    * If tornado transactions on the selected currency/amount are rare and the last one was much earlier than the current block,
    * it helps to quickly synchronize the events tree
-   * @param blockNumber Latest block number on selected chain
+   * @param {number} blockNumber Latest block number on selected chain
    */
   async function addZeroEvent(blockNumber) {
     const zeroEvent = { blockNumber, transactionHash: null };
@@ -1068,7 +1117,7 @@ async function fetchEvents({ type, currency, amount, filterEvents }) {
   async function syncEvents() {
     try {
       let targetBlock = await web3.eth.getBlockNumber();
-      let chunks = 1000;
+      let chunks = 10000;
       console.log('Querying latest events from RPC');
 
       for (let i = startBlock; i < targetBlock; i += chunks) {
@@ -1138,8 +1187,6 @@ async function fetchEvents({ type, currency, amount, filterEvents }) {
         await fetchWeb3Events(i);
         await updateCache(fetchedEvents);
       }
-
-      await addZeroEvent(targetBlock);
     } catch (error) {
       console.log(error);
       throw new Error('Error while updating cache');
@@ -1158,9 +1205,10 @@ async function fetchEvents({ type, currency, amount, filterEvents }) {
     async function queryLatestTimestamp() {
       try {
         const variables = {
-          currency: currency.toString(),
-          amount: amount.toString()
+          currency: currency.toString().toLowerCase(),
+          amount: amount.toString().toLowerCase()
         };
+        console.log(variables);
         if (type === 'deposit') {
           const query = {
             query: `
@@ -1201,11 +1249,12 @@ async function fetchEvents({ type, currency, amount, filterEvents }) {
     async function queryFromGraph(timestamp) {
       try {
         const variables = {
-          currency: currency.toString(),
-          amount: amount.toString(),
+          currency: currency.toString().toLowerCase(),
+          amount: amount.toString().toLowerCase(),
           timestamp: timestamp
         };
         if (type === 'deposit') {
+          console.log(variables);
           const query = {
             query: `
             query($currency: String, $amount: String, $timestamp: Int){
@@ -1228,7 +1277,7 @@ async function fetchEvents({ type, currency, amount, filterEvents }) {
               transactionHash,
               commitment,
               leafIndex: Number(index),
-              timestamp
+              timestamp: Number(timestamp)
             };
           });
           return mapResult;
@@ -1299,18 +1348,20 @@ async function fetchEvents({ type, currency, amount, filterEvents }) {
     }
     await fetchGraphEvents();
   }
-  if (!privateRpc && subgraph && !isTestRPC) {
+  if (!privateRpc && !subgraph && !isTestRPC) {
     await syncGraphEvents();
   } else {
     await syncEvents();
   }
+  await addZeroEvent(await web3.eth.getBlockNumber());
 
   async function loadUpdatedEvents() {
-    const fileName = `./cache/${netName.toLowerCase()}/${type}s_${currency}_${amount}.json`;
+    // Don't use loadCachedEvents function, because we need to check zero event block (to which block we updated)
+    const fileName = `./cache/${netName.toLowerCase()}/${type}s_${currency.toLowerCase()}_${amount}.json`;
     const updatedEvents = await initJson(fileName);
     const updatedBlock = updatedEvents[updatedEvents.length - 1].blockNumber;
     console.log('Cache updated for Tornado', type, amount, currency, 'instance to block', updatedBlock, 'successfully');
-    console.log(`Total ${type}s:`, updatedEvents.length);
+    console.log(`Total ${type}s:`, updatedEvents.length - 1);
     return updatedEvents;
   }
   const events = await loadUpdatedEvents();
@@ -1510,7 +1561,7 @@ async function init({ rpc, noteNetId, currency = 'dai', amount = '100', balanceC
   contractJson = require('./build/contracts/TornadoProxy.abi.json');
   instanceJson = require('./build/contracts/Instance.abi.json');
   circuit = require('./build/circuits/tornado.json');
-  proving_key = fs.readFileSync('build/circuits/tornadoProvingKey.bin').buffer;
+  provingKey = fs.readFileSync('build/circuits/tornadoProvingKey.bin').buffer;
   MERKLE_TREE_HEIGHT = process.env.MERKLE_TREE_HEIGHT || 20;
   ETH_AMOUNT = process.env.ETH_AMOUNT;
   TOKEN_AMOUNT = process.env.TOKEN_AMOUNT;
@@ -1642,6 +1693,7 @@ async function main() {
       statePreferences(program);
 
       const { currency, amount, netId, deposit } = parseNote(noteString);
+      userAction = 'withdrawal';
 
       await init({
         rpc: program.rpc,

@@ -10,6 +10,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@ethersproject/transactions": "^5.7.0",
     "@tornado/circomlib": "0.0.20-p2",
     "@tornado/fixed-merkle-tree": "0.6.1-p1",
     "@tornado/gas-price-oracle": "0.5.2-p1",
