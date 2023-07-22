@@ -590,7 +590,6 @@ async function withdraw({ deposit, currency, amount, recipient, relayerURL, refu
 
     console.log('Sending withdraw transaction through relay');
     const l1Fee = await fetchL1Fee({ gasPrice, gasLimit: realGasLimit });
-    console.log(l1Fee);
     const gasCosts = toBN(gasPrice).mul(toBN(realGasLimit)).add(toBN(l1Fee));
 
     /** Relayer fee details **/
@@ -910,14 +909,26 @@ async function fetchGasPrice() {
     console.log('Gas speed preference: ', preferenceSpeed);
     /** ----------------------------------------------- **/
 
-    // Extra bump estimated gas price for Polygon and Goerli
-    const bumpPercent = netId === 137 || netId === 5 ? 30 : 10;
+    // Extra bump estimated gas price for some chains
+    let bumpPercent;
+    switch (netId) {
+      case 5:
+        bumpPercent = 50;
+        break;
+      case 137:
+      case 43114:
+      case 100:
+        bumpPercent = 30;
+        break;
+      default:
+        bumpPercent = 10;
+    }
 
     try {
       const oracleOptions = {
         chainId: netId,
         defaultRpc: web3.currentProvider.host,
-        minPriority: netId === 1 ? 3 : 0.05,
+        minPriority: netId === 1 || netId === 5 ? 2 : 0.05,
         percentile: 5,
         blocksCount: 20
       };

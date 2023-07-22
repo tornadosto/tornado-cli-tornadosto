@@ -4963,7 +4963,56 @@
     "timestamp": "1683827154"
   },
   {
-    "blockNumber": 103253114,
+    "blockNumber": 106215881,
+    "transactionHash": "0x09b28c4a500cee550355f278fb72ec2b33e56713764e04527e7019e720f9cf85",
+    "commitment": "0x156aa88bafef7b63153d8b96ae5d7966114f3716ce73b9c8d57b129ba2004c2d",
+    "leafIndex": 709,
+    "timestamp": "1688030539"
+  },
+  {
+    "blockNumber": 106258513,
+    "transactionHash": "0x48cd311a186b47071897b3ee72ac6f85e189356520533e4af6c9b4c43512a88e",
+    "commitment": "0x10f34c6092ae62a3f4c949ed9af8828c875b9ca1bd7806b41e4725bfcd371a83",
+    "leafIndex": 710,
+    "timestamp": "1688115803"
+  },
+  {
+    "blockNumber": 106314680,
+    "transactionHash": "0xd4335225c294b498c3878d9dc6d32236b303ec155021c1070500bb45fe25e6aa",
+    "commitment": "0x155cba0a88c1bab21277fd3e17dedb39cb8eea9dffe51b1ac08e67f7e01606a8",
+    "leafIndex": 711,
+    "timestamp": 1688228137
+  },
+  {
+    "blockNumber": 106315771,
+    "transactionHash": "0xc1bc9003b88dae07aea69e045b78f62f8e9e7258dc3eeadacf44c5c73eb7c4b1",
+    "commitment": "0x0b4736481abeaee7393fc1e00e58de1916c14e30c7d4bfe166490c8503b9905b",
+    "leafIndex": 712,
+    "timestamp": 1688230319
+  },
+  {
+    "blockNumber": 106347023,
+    "transactionHash": "0xaabc20e1ebc4eff3aa53d1fb93ea8a28c3acc8eded79f1e7abca17091495ebb3",
+    "commitment": "0x08489e21c0445af1f951d0d7f16c0f4c0e61a70eb1170c40fe6bc2668146158a",
+    "leafIndex": 713,
+    "timestamp": 1688292823
+  },
+  {
+    "blockNumber": 106356337,
+    "transactionHash": "0x5153cf11f1f4334f82731ee5feeec7f7ba1bf389d5720a4678b411101345220c",
+    "commitment": "0x0cc527d09e382ca6683052027ed64722c703300bb5e96e4aceaeb58cb72151a1",
+    "leafIndex": 714,
+    "timestamp": "1688311451"
+  },
+  {
+    "blockNumber": 106357806,
+    "transactionHash": "0x22a13911c4a04918c878deabc23de68013bdac4e8fe49c7f255d8e67d0af7eef",
+    "commitment": "0x052696b13de9527dd27f1805fb9924ba7a4cf60b5c4089453517f8fa12004351",
+    "leafIndex": 715,
+    "timestamp": "1688314389"
+  },
+  {
+    "blockNumber": 107014518,
     "transactionHash": null
   }
 ]

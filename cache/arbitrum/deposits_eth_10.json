@@ -3339,7 +3339,14 @@
     "timestamp": "1684488591"
   },
   {
-    "blockNumber": 96333687,
+    "blockNumber": 96469944,
+    "transactionHash": "0x026c098f3b3f59224e3dc7f372e5cc40a8a03beea9fc78e2b8e2271816d3072e",
+    "commitment": "0x0343ffad5c9d74eb323aea09519bc6b430d520aa296e6b324f2321101eaaff91",
+    "leafIndex": 477,
+    "timestamp": "1685568279"
+  },
+  {
+    "blockNumber": 112246609,
     "transactionHash": null
   }
 ]
