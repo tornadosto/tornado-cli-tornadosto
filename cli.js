@@ -18,7 +18,7 @@ const { toWei, fromWei, toBN, BN } = require('web3-utils');
 const BigNumber = require('bignumber.js');
 const config = require('./config');
 const program = require('commander');
-const { GasPriceOracle } = require('@tornado/gas-price-oracle');
+const { TornadoFeeOracleV4, TornadoFeeOracleV5, TokenPriceOracle } = require('@tornado/tornado-oracles');
 const { SocksProxyAgent } = require('socks-proxy-agent');
 const is_ip_private = require('private-ip');
 const readline = require('readline');
@@ -42,7 +42,8 @@ let web3,
   netSymbol,
   multiCall,
   userAction,
-  subgraph;
+  subgraph,
+  feeOracle;
 let MERKLE_TREE_HEIGHT, ETH_AMOUNT, TOKEN_AMOUNT, PRIVATE_KEY;
 
 /** Command state parameters */
@@ -157,86 +158,27 @@ async function submitTransaction(signedTX) {
     });
 }
 
-/**
- * Estimate gas for created transaction
- * @typedef {string} EthAddress Wallet (account) address
- * @param {EthAddress} from Transaction sender
- * @param {EthAddress} to Transaction recipient
- * @param {Number} nonce Account nonce (transactions count on sender account)
- * @param {string} encodedData Encoded ABI of transaction
- * @param {Number} value Amount of funds to send in this transaction
- * @returns {Promise<Number>} current acceptable gas limit to send this transaction
- */
-async function estimateGas(from, to, nonce, encodedData, value = 0) {
-  const fetchedGas = await web3.eth.estimateGas({
-    from,
-    to,
-    value,
-    nonce,
-    data: encodedData
-  });
-  const bumped = Math.floor(fetchedGas * 1.3);
-  return bumped;
-}
-
-async function fetchL1Fee({ gasPrice, gasLimit }) {
-  const DUMMY_NONCE = '0x1111111111111111111111111111111111111111111111111111111111111111';
-
-  const DUMMY_WITHDRAW_DATA =
-    '0x0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111';
-
-  if (netId === 10) {
-    const ovmGasPriceOracleContractAddress = '0x420000000000000000000000000000000000000F';
-    const optimismL1GasPriceOracleABI = require('./build/contracts/OptimismL1GasPriceOracle.json');
-    const oracleInstance = new web3.eth.Contract(optimismL1GasPriceOracleABI, ovmGasPriceOracleContractAddress);
-
-    try {
-      const tx = serialize({
-        type: 0,
-        gasLimit,
-        chainId: netId,
-        nonce: DUMMY_NONCE,
-        data: DUMMY_WITHDRAW_DATA,
-        gasPrice,
-        to: tornadoProxyAddress
-      });
-
-      const l1Fee = await oracleInstance.methods.getL1Fee(tx).call();
-
-      return l1Fee;
-    } catch (err) {
-      throw new Error('Error while fetching optimism L1 fee: ' + err.message);
-    }
-  }
-
-  return 0;
-}
-
-async function generateTransaction(to, encodedData, value = 0) {
+async function generateTransaction(to, encodedData, value = 0, txType = 'other') {
   const nonce = await web3.eth.getTransactionCount(senderAccount);
-  let gasPrice = await fetchGasPrice();
-
-  let gasLimit;
-
-  if (encodedData) {
-    gasLimit = await estimateGas(senderAccount, to, nonce, encodedData, value);
-  } else {
-    gasLimit = 23000;
-  }
-  gasLimit = web3.utils.toHex(gasLimit);
 
   const isNumRString = typeof value == 'string' || typeof value == 'number';
   const valueCost = isNumRString ? toBN(value) : value;
 
-  const additionalFees = userAction === 'withdrawal' ? await fetchL1Fee({ gasPrice, gasLimit }) : 0;
-  const gasCosts = toBN(gasPrice).mul(toBN(gasLimit)).add(toBN(additionalFees));
+  const incompletedTx = {
+    to,
+    value: valueCost.toString(),
+    data: encodedData
+  };
+
+  const { gasPrice, gasLimit, l1Fee } = await feeOracle.getGasParams(incompletedTx, txType);
+  const gasCosts = toBN(gasPrice).mul(toBN(gasLimit)).add(toBN(l1Fee));
   const totalCosts = valueCost.add(gasCosts);
 
   /** Transaction details */
   console.log('Gas price: ', web3.utils.hexToNumber(gasPrice));
-  console.log('Gas limit: ', web3.utils.hexToNumber(gasLimit));
-  if (additionalFees != 0)
-    console.log('Additional gas fees (like L1 data fee): ', rmDecimalBN(fromWei(additionalFees), 12), `${netSymbol}`);
+  console.log('Gas limit: ', gasLimit);
+  if (!toBN(l1Fee).eq(toBN(0)))
+    console.log('Additional gas fees (like L1 data fee): ', rmDecimalBN(fromWei(l1Fee), 12), `${netSymbol}`);
   console.log('Transaction fee: ', rmDecimalBN(fromWei(gasCosts), 12), `${netSymbol}`);
   console.log('Transaction cost: ', rmDecimalBN(fromWei(totalCosts), 12), `${netSymbol}`);
   /** ----------------------------------------- **/
@@ -431,7 +373,7 @@ async function deposit({ currency, amount, commitmentNote }) {
  * @param {Object} deposit Deposit object
  * @param {string} currency Currency ticker, like 'ETH' or 'BNB'
  * @param {number} amount Tornado instance amount, like 0.1 (ETH or BNB) or 10
- * @return {MerkleProof} Calculated valid merkle tree (proof)
+ * @return {Promise<MerkleProof>} Calculated valid merkle tree (proof)
  */
 async function generateMerkleProof(deposit, currency, amount) {
   // Get all deposit events from smart contract and assemble merkle tree from them
@@ -552,50 +494,49 @@ async function withdraw({ deposit, currency, amount, recipient, relayerURL, refu
     assert(netId === (await web3.eth.net.getId()) || netId === '*', 'This relay is for different network');
     console.log('Relay address:', rewardAccount);
 
-    const gasPrice = await fetchGasPrice();
-
     const decimals = isTestRPC ? 18 : config.deployments[`netId${netId}`]['tokens'][currency].decimals;
 
     const merkleWithdrawalProof = await generateMerkleProof(deposit, currency, amount);
 
-    async function calculateDataForRelayer(gasLimit) {
-      const { desiredFee: totalFee, feePercent: relayerFee } = await calculateRelayerWithdrawFee({
-        currency,
-        gasPrice,
-        amount,
-        refund,
-        ethPrices,
-        relayerServiceFee: tornadoServiceFee,
-        decimals,
-        gasLimit
-      });
-
+    async function calculateDataForRelayer(totalRelayerFee = 0) {
       const { proof, args } = await generateProof({
         deposit,
         currency,
         amount,
         recipient,
         relayerAddress: rewardAccount,
-        fee: totalFee,
+        fee: toBN(totalRelayerFee),
         refund,
         merkleProof: merkleWithdrawalProof
       });
-
-      return { proof, args, totalFee, relayerFee };
+      return { proof, args };
     }
 
     const { proof: dummyProof, args: dummyArgs } = await calculateDataForRelayer();
-    const realGasLimit = await estimateWithdrawGasLimit({ relayer: rewardAccount, proof: dummyProof, callArgs: dummyArgs });
-    const { proof, args, totalFee, relayerFee } = await calculateDataForRelayer(realGasLimit);
+
+    const withdrawalTxCalldata = tornado.methods.withdraw(tornadoProxyAddress, dummyProof, ...dummyArgs);
+    const incompleteWithdrawalTx = {
+      to: tornadoProxyAddress,
+      data: withdrawalTxCalldata,
+      value: toBN(dummyArgs[5]) || 0
+    };
+
+    const totalWithdrawalFee = await feeOracle.calculateWithdrawalFeeViaRelayer(
+      'user_withdrawal',
+      incompleteWithdrawalTx,
+      Number(tornadoServiceFee),
+      currency,
+      amount,
+      decimals,
+      refund,
+      ethPrices?.[currency]
+    );
+    const { proof, args } = await calculateDataForRelayer(totalWithdrawalFee);
 
     console.log('Sending withdraw transaction through relay');
-    const l1Fee = await fetchL1Fee({ gasPrice, gasLimit: realGasLimit });
-    const gasCosts = toBN(gasPrice).mul(toBN(realGasLimit)).add(toBN(l1Fee));
 
     /** Relayer fee details **/
-    console.log('Transaction fee: ', rmDecimalBN(fromWei(gasCosts), 12), `${netSymbol}`);
-    console.log('Relayer fee: ', rmDecimalBN(fromWei(relayerFee), 12), `${netSymbol}`);
-    console.log('Total fees: ', rmDecimalBN(fromWei(totalFee), 12), `${netSymbol}`);
+    console.log('Total fees: ', rmDecimalBN(fromWei(toBN(totalWithdrawalFee)), 12), `${netSymbol}`);
     /** -------------------- **/
 
     if (shouldPromptConfirmation) {
@@ -638,7 +579,12 @@ async function withdraw({ deposit, currency, amount, recipient, relayerURL, refu
     const { proof, args } = await generateProof({ deposit, currency, amount, recipient, refund });
 
     console.log('Submitting withdraw transaction');
-    await generateTransaction(tornadoProxyAddress, tornado.methods.withdraw(tornadoInstance, proof, ...args).encodeABI());
+    await generateTransaction(
+      tornadoProxyAddress,
+      tornado.methods.withdraw(tornadoInstance, proof, ...args).encodeABI(),
+      toBN(args[5]),
+      'user_withdrawal'
+    );
   }
   if (currency === netSymbol.toLowerCase()) {
     await printETHBalance({ address: recipient, name: 'Recipient' });
@@ -703,7 +649,7 @@ async function send({ address, amount, tokenAddress }) {
       }
     } else {
       console.log('Amount not defined, sending all available amounts');
-      const gasPrice = new BigNumber(await fetchGasPrice());
+      const gasPrice = new BigNumber(await feeOracle.getGasPrice('other'));
       const gasLimit = new BigNumber(21000);
       if (netId == 1) {
         const priorityFee = new BigNumber(await gasPrices(3));
@@ -901,122 +847,6 @@ function getCurrentNetworkSymbol() {
     default:
       return 'ETH';
   }
-}
-
-async function fetchGasPrice() {
-  try {
-    /** Gas preferences **/
-    console.log('Gas speed preference: ', preferenceSpeed);
-    /** ----------------------------------------------- **/
-
-    // Extra bump estimated gas price for some chains
-    let bumpPercent;
-    switch (netId) {
-      case 5:
-        bumpPercent = 50;
-        break;
-      case 137:
-      case 43114:
-      case 100:
-        bumpPercent = 30;
-        break;
-      default:
-        bumpPercent = 10;
-    }
-
-    try {
-      const oracleOptions = {
-        chainId: netId,
-        defaultRpc: web3.currentProvider.host,
-        minPriority: netId === 1 || netId === 5 ? 2 : 0.05,
-        percentile: 5,
-        blocksCount: 20
-      };
-      const oracle = new GasPriceOracle(oracleOptions);
-      const { maxFeePerGas, gasPrice } = await oracle.getTxGasParams({ legacySpeed: preferenceSpeed, bumpPercent });
-
-      return maxFeePerGas || gasPrice;
-    } catch (e) {
-      const wei = toBN(await web3.eth.getGasPrice());
-      const bumped = wei.add(wei.mul(toBN(bumpPercent)).div(toBN(100)));
-      return toHex(bumped);
-    }
-  } catch (err) {
-    throw new Error(`Method fetchGasPrice has error ${err.message}`);
-  }
-}
-
-/**
- * Get default gas limit depending on chain ID
- * Available chain ID's on Tornado
- * @typedef {1 | 5 | 10 | 56 | 100 | 137 | 42161 | 43114 } NetID
- * @param {NetID}} netId
- * @returns {Number} acceptable withdraw gas limit for selected chain
- */
-function getHardcodedWithdrawGasLimit(netId) {
-  switch (netId) {
-    case 10:
-      return 440000;
-    case 42161:
-      return 1900000;
-    default:
-      return 390000;
-  }
-}
-
-/**
- * Estimate gas limit for withdraw transaction via relayer with pregenerated proof
- * @typedef {string} EthAddress Wallet (account) address
- * @param {object} args Function arguments
- * @param {EthAddress} args.relayer Relayer address
- * @param {string} args.proof Calculated SNARK proof for withdrawal
- * @param {Array<string>} args.callArgs Arguments to call 'withdraw' function from Tornado Proxy contract
- * @returns {Promise<Number>} Acceptable gas limit to send withdraw transaction via relayer for selected chain
- */
-async function estimateWithdrawGasLimit({ relayer, proof, callArgs }) {
-  const tx = tornado.methods.withdraw(tornadoInstance, proof, ...callArgs).encodeABI();
-  const nonce = await web3.eth.getTransactionCount(relayer);
-  const gasLimit = await estimateGas(relayer, tornadoProxyAddress, nonce, tx, callArgs[5]);
-
-  return gasLimit;
-}
-
-async function calculateRelayerWithdrawFee({
-  currency,
-  gasPrice,
-  amount,
-  refund,
-  ethPrices,
-  relayerServiceFee,
-  decimals,
-  gasLimit
-}) {
-  const decimalsPoint =
-    Math.floor(relayerServiceFee) === Number(relayerServiceFee) ? 0 : relayerServiceFee.toString().split('.')[1].length;
-  const roundDecimal = 10 ** decimalsPoint;
-  const total = toBN(fromDecimals({ amount, decimals }));
-  const feePercent = total.mul(toBN(relayerServiceFee * roundDecimal)).div(toBN(roundDecimal * 100));
-  const l1Fee = await fetchL1Fee({ gasPrice, gasLimit });
-  const expense = toBN(gasPrice)
-    .mul(toBN(gasLimit || getHardcodedWithdrawGasLimit(netId)))
-    .add(toBN(l1Fee));
-
-  let desiredFee;
-  switch (currency) {
-    case netSymbol.toLowerCase(): {
-      desiredFee = expense.add(feePercent);
-      break;
-    }
-    default: {
-      desiredFee = expense
-        .add(toBN(refund))
-        .mul(toBN(10 ** decimals))
-        .div(toBN(ethPrices[currency]));
-      desiredFee = desiredFee.add(feePercent);
-      break;
-    }
-  }
-  return { desiredFee, feePercent };
 }
 
 /**
@@ -1599,6 +1429,7 @@ async function init({ rpc, noteNetId, currency = 'dai', amount = '100', balanceC
   netId = await web3.eth.net.getId();
   netName = getCurrentNetworkName();
   netSymbol = getCurrentNetworkSymbol();
+  feeOracle = Number(netId) === 1 ? new TornadoFeeOracleV4(netId, rpc) : new TornadoFeeOracleV5(netId, rpc);
 
   if (noteNetId && Number(noteNetId) !== netId) {
     throw new Error('This note is for a different network. Specify the --rpc option explicitly');
