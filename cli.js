@@ -161,18 +161,18 @@ async function submitTransaction(signedTX) {
 async function generateTransaction(to, encodedData, value = 0, txType = 'other') {
   const nonce = await web3.eth.getTransactionCount(senderAccount);
 
-  const isNumRString = typeof value == 'string' || typeof value == 'number';
-  const valueCost = isNumRString ? toBN(value) : value;
+  value = toBN(value);
 
-  const incompletedTx = {
+  let incompletedTx = {
     to,
-    value: valueCost.toString(),
+    value: value.toString(),
     data: encodedData
   };
+  if (txType === 'send') incompletedTx['from'] = senderAccount;
 
   const { gasPrice, gasLimit, l1Fee } = await feeOracle.getGasParams(incompletedTx, txType);
   const gasCosts = toBN(gasPrice).mul(toBN(gasLimit)).add(toBN(l1Fee));
-  const totalCosts = valueCost.add(gasCosts);
+  const totalCosts = value.add(gasCosts);
 
   /** Transaction details */
   console.log('Gas price: ', web3.utils.hexToNumber(gasPrice));
@@ -632,11 +632,12 @@ async function send({ address, amount, tokenAddress }) {
       process.exit(1);
     }
     const encodeTransfer = erc20.methods.transfer(address, toSend).encodeABI();
-    await generateTransaction(tokenAddress, encodeTransfer);
+    await generateTransaction(tokenAddress, encodeTransfer, 0, 'send');
     console.log('Sent', amount, tokenSymbol, 'to', address);
   } else {
     const balance = new BigNumber(await web3.eth.getBalance(senderAccount));
     assert(balance.toNumber() !== 0, "You have 0 balance, can't send transaction");
+    let toSend = new BigNumber(0);
     if (amount) {
       toSend = new BigNumber(amount).times(BigNumber(10).pow(18));
       if (balance.lt(toSend)) {
@@ -1452,7 +1453,7 @@ async function init({ rpc, noteNetId, currency = 'dai', amount = '100', balanceC
     try {
       if (balanceCheck) {
         currency = netSymbol.toLowerCase();
-        amount = Object.keys(config.deployments[`netId${netId}`][currency].instanceAddress)[0];
+        amount = Object.keys(config.deployments[`netId${netId}`]['tokens'][currency].instanceAddress)[0];
       }
       tornadoProxyAddress = config.deployments[`netId${netId}`].proxy;
       multiCall = config.deployments[`netId${netId}`].multicall;
