@@ -41,7 +41,6 @@ let web3,
   netName,
   netSymbol,
   multiCall,
-  userAction,
   subgraph,
   feeOracle;
 let MERKLE_TREE_HEIGHT, ETH_AMOUNT, TOKEN_AMOUNT, PRIVATE_KEY;
@@ -468,7 +467,7 @@ async function generateProof({ deposit, currency, amount, recipient, relayerAddr
 async function withdraw({ deposit, currency, amount, recipient, relayerURL, refund = '0' }) {
   let options = {};
   if (currency === netSymbol.toLowerCase() && refund !== '0') {
-    throw new Error('The ETH purchase is supposted to be 0 for ETH withdrawals');
+    throw new Error('The ETH purchase is supposed to be 0 for ETH withdrawals');
   }
 
   if (!web3.utils.isAddress(recipient)) {
