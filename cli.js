@@ -11,7 +11,6 @@ const bigInt = snarkjs.bigInt;
 const merkleTree = require('@tornado/fixed-merkle-tree');
 const Web3 = require('web3');
 const Web3HttpProvider = require('@tornado/web3-providers-http');
-const { serialize } = require('@ethersproject/transactions');
 const buildGroth16 = require('@tornado/websnark/src/groth16');
 const websnarkUtils = require('@tornado/websnark/src/utils');
 const { toWei, fromWei, toBN, BN } = require('web3-utils');
@@ -169,15 +168,13 @@ async function generateTransaction(to, encodedData, value = 0, txType = 'other')
   };
   if (txType === 'send') incompletedTx['from'] = senderAccount;
 
-  const { gasPrice, gasLimit, l1Fee } = await feeOracle.getGasParams(incompletedTx, txType);
-  const gasCosts = toBN(gasPrice).mul(toBN(gasLimit)).add(toBN(l1Fee));
+  const { gasPrice, gasLimit } = await feeOracle.getGasParams({ tx: incompletedTx, txType });
+  const gasCosts = toBN(gasPrice).mul(toBN(gasLimit));
   const totalCosts = value.add(gasCosts);
 
   /** Transaction details */
   console.log('Gas price: ', web3.utils.hexToNumber(gasPrice));
   console.log('Gas limit: ', gasLimit);
-  if (!toBN(l1Fee).eq(toBN(0)))
-    console.log('Additional gas fees (like L1 data fee): ', rmDecimalBN(fromWei(l1Fee), 12), `${netSymbol}`);
   console.log('Transaction fee: ', rmDecimalBN(fromWei(gasCosts), 12), `${netSymbol}`);
   console.log('Transaction cost: ', rmDecimalBN(fromWei(totalCosts), 12), `${netSymbol}`);
   /** ----------------------------------------- **/
@@ -415,7 +412,7 @@ async function generateMerkleProof(deposit, currency, amount) {
  * @param {string} args.recipient Funds recipient
  * @param {string | 0 } args.relayer Relayer address
  * @param {number} args.fee Relayer fee
- * @param {number} args.refund Receive ether for exchanged tokens
+ * @param {string} args.refund Receive ether for exchanged tokens
  * @param {MerkleProof} [args.merkleProof] Valid merkle tree proof
  * @returns {Promise<ProofData>} Proof data
  */
@@ -464,17 +461,19 @@ async function generateProof({ deposit, currency, amount, recipient, relayerAddr
  * @param noteString Note to withdraw
  * @param recipient Recipient address
  */
-async function withdraw({ deposit, currency, amount, recipient, relayerURL, refund = '0' }) {
+async function withdraw({ deposit, currency, amount, recipient, relayerURL, refund }) {
   let options = {};
-  if (currency === netSymbol.toLowerCase() && refund !== '0') {
+  if (currency === netSymbol.toLowerCase() && refund && refund !== '0') {
     throw new Error('The ETH purchase is supposed to be 0 for ETH withdrawals');
   }
+
+  if (!isNaN(Number(refund))) refund = toWei(refund, 'ether');
+  else refund = toBN(await feeOracle.fetchRefundInETH(currency.toLowerCase()));
 
   if (!web3.utils.isAddress(recipient)) {
     throw new Error('Recipient address is not valid');
   }
 
-  refund = toWei(refund);
   if (relayerURL) {
     if (relayerURL.endsWith('.eth')) {
       throw new Error(
@@ -511,7 +510,8 @@ async function withdraw({ deposit, currency, amount, recipient, relayerURL, refu
       return { proof, args };
     }
 
-    const { proof: dummyProof, args: dummyArgs } = await calculateDataForRelayer();
+    const relayerFee = feeOracle.calculateRelayerFeeInWei(tornadoServiceFee, amount, decimals);
+    const { proof: dummyProof, args: dummyArgs } = await calculateDataForRelayer(relayerFee);
 
     const withdrawalTxCalldata = tornado.methods.withdraw(tornadoProxyAddress, dummyProof, ...dummyArgs);
     const incompleteWithdrawalTx = {
@@ -520,22 +520,31 @@ async function withdraw({ deposit, currency, amount, recipient, relayerURL, refu
       value: toBN(dummyArgs[5]) || 0
     };
 
-    const totalWithdrawalFee = await feeOracle.calculateWithdrawalFeeViaRelayer(
-      'user_withdrawal',
-      incompleteWithdrawalTx,
-      Number(tornadoServiceFee),
+    const totalWithdrawalFeeViaRelayer = await feeOracle.calculateWithdrawalFeeViaRelayer({
+      tx: incompleteWithdrawalTx,
+      txType: 'user_withdrawal',
+      relayerFeePercent: tornadoServiceFee,
       currency,
       amount,
       decimals,
       refund,
-      ethPrices?.[currency]
-    );
-    const { proof, args } = await calculateDataForRelayer(totalWithdrawalFee);
+      tokenPriceInEth: ethPrices?.[currency]
+    });
+
+    const { proof, args } = await calculateDataForRelayer(totalWithdrawalFeeViaRelayer);
 
     console.log('Sending withdraw transaction through relay');
 
     /** Relayer fee details **/
-    console.log('Total fees: ', rmDecimalBN(fromWei(toBN(totalWithdrawalFee)), 12), `${netSymbol}`);
+    console.log('Relayer fee: ', rmDecimalBN(fromWei(toBN(relayerFee)), 12), `${currency.toUpperCase()}`);
+    console.log('Total fees: ', rmDecimalBN(fromWei(toBN(totalWithdrawalFeeViaRelayer)), 12), `${currency.toUpperCase()}`);
+    const toReceive = toBN(fromDecimals({ amount, decimals })).sub(toBN(totalWithdrawalFeeViaRelayer));
+    console.log(
+      'Amount to receive: ',
+      rmDecimalBN(fromWei(toReceive), 12),
+      `${currency.toUpperCase()}`,
+      toBN(refund).gt(toBN(0)) ? ` + ${rmDecimalBN(fromWei(refund), 12)} ${netSymbol}` : ''
+    );
     /** -------------------- **/
 
     if (shouldPromptConfirmation) {
@@ -558,11 +567,7 @@ async function withdraw({ deposit, currency, amount, recipient, relayerURL, refu
       const result = await getStatus(id, relayerURL, options);
       console.log('STATUS', result);
     } catch (e) {
-      if (e.response) {
-        console.error(e.response.data.error);
-      } else {
-        console.error(e.message);
-      }
+      console.error(e.message);
     }
   } else {
     // using private key
