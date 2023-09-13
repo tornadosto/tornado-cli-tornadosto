@@ -17,7 +17,7 @@ const { toWei, fromWei, toBN, BN } = require('web3-utils');
 const BigNumber = require('bignumber.js');
 const config = require('./config');
 const program = require('commander');
-const { TornadoFeeOracleV4, TornadoFeeOracleV5, TokenPriceOracle } = require('@tornado/tornado-oracles');
+const { TornadoFeeOracleV4, TornadoFeeOracleV5 } = require('@tornado/tornado-oracles');
 const { SocksProxyAgent } = require('socks-proxy-agent');
 const is_ip_private = require('private-ip');
 const readline = require('readline');
@@ -486,7 +486,15 @@ async function withdraw({ deposit, currency, amount, recipient, relayerURL, refu
         headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; rv:91.0) Gecko/20100101 Firefox/91.0' }
       };
     }
-    const relayerStatus = await axios.get(relayerURL + '/status', options);
+
+    let relayerStatus;
+    try {
+      relayerURL = new URL(relayerURL).origin;
+      relayerStatus = await axios.get(relayerURL + '/status', options);
+    } catch (err) {
+      console.error(err);
+      throw new Error('Cannot get relayer status');
+    }
 
     const { rewardAccount, netId, ethPrices, tornadoServiceFee } = relayerStatus.data;
     assert(netId === (await web3.eth.net.getId()) || netId === '*', 'This relay is for different network');
