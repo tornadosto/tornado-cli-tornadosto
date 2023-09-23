@@ -10,7 +10,6 @@ const circomlib = require('@tornado/circomlib');
 const bigInt = snarkjs.bigInt;
 const merkleTree = require('@tornado/fixed-merkle-tree');
 const Web3 = require('web3');
-const Web3HttpProvider = require('@tornado/web3-providers-http');
 const buildGroth16 = require('@tornado/websnark/src/groth16');
 const websnarkUtils = require('@tornado/websnark/src/utils');
 const { toWei, fromWei, toBN, BN } = require('web3-utils');
@@ -1367,7 +1366,7 @@ async function init({ rpc, noteNetId, currency = 'dai', amount = '100', balanceC
     console.log('Using tor network');
     web3Options = { agent: { https: new SocksProxyAgent('socks5h://127.0.0.1:' + torPort) }, timeout: 60000 };
     // Use forked web3-providers-http from local file to modify user-agent header value which improves privacy.
-    web3 = new Web3(new Web3HttpProvider(rpc, web3Options), null, { transactionConfirmationBlocks: 1 });
+    web3 = new Web3(new Web3.providers.HttpProvider(rpc, web3Options), null, { transactionConfirmationBlocks: 1 });
     ipOptions = {
       httpsAgent: new SocksProxyAgent('socks5h://127.0.0.1:' + torPort),
       headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; rv:91.0) Gecko/20100101 Firefox/91.0' }
@@ -1376,21 +1375,22 @@ async function init({ rpc, noteNetId, currency = 'dai', amount = '100', balanceC
     console.log('Using tor network');
     web3Options = { agent: { http: new SocksProxyAgent('socks5h://127.0.0.1:' + torPort) }, timeout: 60000 };
     // Use forked web3-providers-http from local file to modify user-agent header value which improves privacy.
-    web3 = new Web3(new Web3HttpProvider(rpc, web3Options), null, { transactionConfirmationBlocks: 1 });
+    web3 = new Web3(new Web3.providers.HttpProvider(rpc, web3Options), null, { transactionConfirmationBlocks: 1 });
     ipOptions = {
       httpsAgent: new SocksProxyAgent('socks5h://127.0.0.1:' + torPort),
       headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; rv:91.0) Gecko/20100101 Firefox/91.0' }
     };
   } else if (rpc.includes('ipc')) {
     console.log('Using ipc connection');
-    web3 = new Web3(new Web3.providers.IpcProvider(rpc, net), null, { transactionConfirmationBlocks: 1 });
+    web3 = new Web3(new Web3.providers.IpcProvider(rpc, {}), null, { transactionConfirmationBlocks: 1 });
   } else if (rpc.startsWith('ws') || rpc.startsWith('wss')) {
     console.log('Using websocket connection (Note: Tor is not supported for Websocket providers)');
     web3Options = {
       clientConfig: { keepalive: true, keepaliveInterval: -1 },
       reconnect: { auto: true, delay: 1000, maxAttempts: 10, onTimeout: false }
     };
-    web3 = new Web3(new Web3.providers.WebsocketProvider(rpc, web3Options), net, { transactionConfirmationBlocks: 1 });
+    web3 = new Web3(new Web3.providers.WebsocketProvider(rpc, web3Options), null, { transactionConfirmationBlocks: 1 });
+    if (!(await web3.eth.net.isListening())) throw new Error('Cannot connect to websocket provider');
   } else {
     console.log('Connecting to remote node');
     web3 = new Web3(rpc, null, { transactionConfirmationBlocks: 1 });
