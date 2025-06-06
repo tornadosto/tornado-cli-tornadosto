@@ -368,6 +368,24 @@ module.exports = {
       multicall: '0x142E2FEaC30d7fc3b61f9EE85FCCad8e560154cc',
       subgraph: 'https://api.thegraph.com/subgraphs/name/tornadocash/optimism-tornado-subgraph',
       defaultRpc: 'https://optimism-mainnet.chainnodes.org/d692ae63-0a7e-43e0-9da9-fe4f4cc6c607'
+    },
+    netId11155111: {
+      eth: {
+        instanceAddress: {
+            0.1: '0x8C4A04d872a6C1BE37964A21ba3a138525dFF50b',
+            1: '0x8cc930096B4Df705A007c4A039BDFA1320Ed2508',
+            10: '0x8D10d506D29Fc62ABb8A290B99F66dB27Fc43585',
+          },
+          deployedBlockNumber: {
+            0.1: 5594400,
+            1: 5594401,
+            10: 5594402,
+          },
+          miningEnabled: false,
+          symbol: 'ETH',
+          decimals: 18
+      }
+      
     }
   }
 };
