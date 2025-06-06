@@ -1368,7 +1368,14 @@ async function init({ rpc, noteNetId, currency = 'dai', amount = '100', balanceC
 
   if (torPort && rpc.startsWith('https')) {
     console.log('Using tor network');
-    web3Options = { agent: { https: new SocksProxyAgent('socks5h://127.0.0.1:' + torPort) }, timeout: 60000 };
+    web3Options = 
+    { 
+      agent: 
+      { 
+        https: new SocksProxyAgent('socks5h://127.0.0.1:' + torPort) 
+      }, 
+      timeout: 60000 
+    };
     // Use forked web3-providers-http from local file to modify user-agent header value which improves privacy.
     web3 = new Web3(new Web3.providers.HttpProvider(rpc, web3Options), null, { transactionConfirmationBlocks: 1 });
     ipOptions = {
