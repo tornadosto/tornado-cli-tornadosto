@@ -1,6 +1,6 @@
 # Tornado-CLI
 
-Command line tool to interact with [Tornado Cash](https://tornado.ws).
+Command line tool to interact with [Tornado Cash](https://tornadocash.eth.limo/).
 
 ### How to install tornado cli
 
@@ -17,10 +17,10 @@ You also need to install C++ build tools in order to do 'npm install', for more 
 If you have git installed on your system, clone the master branch.
 
 ```bash
-$ git clone https://git.tornado.ws/tornadocash/tornado-cli
+$ git clone https://github.com/tornadosto/tornado-cli-tornadosto
 ```
 
-Or, download the archive file from git: https://git.tornado.ws/tornadocash/tornado-cli/archive/master.zip
+Or, download the archive file from git: https://github.com/tornadosto/tornado-cli-tornadosto/archive/refs/heads/main.zip
 
 After downloading or cloning the repository, you must install necessary libraries using the following command.
 

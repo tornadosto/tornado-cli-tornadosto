@@ -1366,7 +1366,8 @@ async function init({ rpc, noteNetId, currency = 'dai', amount = '100', balanceC
 
   if (noteNetId && !rpc) rpc = config.deployments[`netId${noteNetId}`].defaultRpc;
 
-  if (torPort && rpc.startsWith('https')) {
+  if (torPort && rpc.startsWith('https')) 
+  {
     console.log('Using tor network');
     web3Options = 
     { 
@@ -1382,7 +1383,9 @@ async function init({ rpc, noteNetId, currency = 'dai', amount = '100', balanceC
       httpsAgent: new SocksProxyAgent('socks5h://127.0.0.1:' + torPort),
       headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; rv:91.0) Gecko/20100101 Firefox/91.0' }
     };
-  } else if (torPort && rpc.startsWith('http')) {
+  } 
+  else if (torPort && rpc.startsWith('http')) 
+  {
     console.log('Using tor network');
     web3Options = { agent: { http: new SocksProxyAgent('socks5h://127.0.0.1:' + torPort) }, timeout: 60000 };
     // Use forked web3-providers-http from local file to modify user-agent header value which improves privacy.
@@ -1504,7 +1507,7 @@ async function main() {
   program
     .option('-r, --rpc <URL>', 'The RPC that CLI should interact with')
     .option('-R, --relayer <URL>', 'Withdraw via relayer')
-    .option('-T, --tor <PORT>', 'Optional tor port')
+    .option('-T, --tor <IP>:<PORT>', 'Optional tor')
     .option('-p, --private-key <KEY>', "Wallet private key - If you didn't add it to .env file and it is needed for operation")
     .option('-S --gas-speed <SPEED>', 'Gas speed preference [ instant, fast, standard, low ]')
     .option('-N --noconfirmation', 'No confirmation mode - Does not query confirmation ')
