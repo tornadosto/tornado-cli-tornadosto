@@ -799,6 +799,8 @@ function toDecimals(value, decimals, fixed) {
 // List fetched from https://github.com/ethereum-lists/chains/blob/master/_data/chains
 function getExplorerLink() {
   switch (netId) {
+    case 11155111:
+      return 'sepolia.etherscan.io';
     case 56:
       return 'bscscan.com';
     case 100:
@@ -841,6 +843,8 @@ function getCurrentNetworkName() {
       return 'Kovan';
     case 10:
       return 'Optimism';
+    case 11155111:
+      return 'Sepolia';
     default:
       return 'testRPC';
   }

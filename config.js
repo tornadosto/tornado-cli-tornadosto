@@ -370,21 +370,31 @@ module.exports = {
       defaultRpc: 'https://optimism-mainnet.chainnodes.org/d692ae63-0a7e-43e0-9da9-fe4f4cc6c607'
     },
     netId11155111: {
-      eth: {
-        instanceAddress: {
+      tokens:
+      {
+        eth: 
+        {
+          instanceAddress: 
+          {
             0.1: '0x8C4A04d872a6C1BE37964A21ba3a138525dFF50b',
             1: '0x8cc930096B4Df705A007c4A039BDFA1320Ed2508',
             10: '0x8D10d506D29Fc62ABb8A290B99F66dB27Fc43585',
           },
-          deployedBlockNumber: {
+          deployedBlockNumber: 
+          {
             0.1: 5594400,
             1: 5594401,
             10: 5594402,
           },
-          miningEnabled: false,
-          symbol: 'ETH',
-          decimals: 18
-      }
+            miningEnabled: false,
+            symbol: 'ETH',
+            decimals: 18
+        } 
+      },
+      proxy: '0x1572AFE6949fdF51Cb3E0856216670ae9Ee160Ee',
+      multicall: '0x53c43764255c17bd724f74c4ef150724ac50a3ed',
+      subgraph: 'https://gateway.thegraph.com/api/subgraphs/id/8kJGz92AYUm72wfyUoze1as3E11ynDSTZM8emiRWrRPy',
+      defaultRpc: 'https://sepolia.chainnodes.org/61b7de01-6cc4-40dc-a6c2-b6e4a61bb042'
       
     }
   }
